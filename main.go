@@ -1,16 +1,56 @@
 package main
 
 import (
-    "fmt"
-    "net/http"
+	"database/sql"
+	"fmt"
+
+	_ "github.com/mattn/go-sqlite3"
+
+	"github.com/gin-gonic/gin"
 )
 
-func handler(w http.ResponseWriter, r *http.Request) {
-    fmt.Fprintf(w, "Hi there, I love %s!", r.URL.Path[1:])
-}
-
 func main() {
-    fmt.Printf("Starting\n")
-    http.HandleFunc("/", handler)
-    http.ListenAndServe(":8177", nil)
+	db, err := sql.Open("sqlite3", "test.db")
+	if err != nil {
+		panic(err)
+	}
+
+	r := gin.Default()
+	r.POST("/temperature", func(c *gin.Context) {
+		innerTemperature := c.PostForm("inner")
+		outerTemperature := c.PostForm("outer")
+
+		statement, err := db.Prepare("INSERT INTO temperature (session_id, inner, outer) VALUES (?, ?, ?)")
+		if err != nil {
+			panic(err)
+		}
+		_, err = statement.Exec(1, innerTemperature, outerTemperature)
+		if err != nil {
+			panic(err)
+		}
+
+		c.Status(200)
+	})
+
+	r.GET("/list", func(c *gin.Context) {
+
+		rows, _ := db.Query("SELECT inner FROM temperature")
+
+		var id int
+		var ret string
+
+		for rows.Next() {
+			_ = rows.Scan(&id)
+			ret += fmt.Sprintln(id)
+		}
+
+		rows.Close()
+
+		c.String(200, ret)
+
+	})
+
+	r.Run(":8177")
+	db.Close()
+
 }

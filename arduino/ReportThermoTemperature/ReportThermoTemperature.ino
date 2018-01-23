@@ -69,11 +69,14 @@ void loop() {
 
       Serial.print("Thermocouple Temp: "); Serial.println(temperature);
 
-      client.print("POST /reportData?innerTemperature=");
-      client.print(temperature);
-      client.print("&outerTemperature=");
-      client.println(max.readCJTemperature());    
+      client.println("POST /report HTTP/1.1");
       client.println("Connection: close");
+      client.println("Content-Type: application/x-www-form-urlencoded");
+      client.println("");
+      client.print("inner=");
+      client.print(temperature);
+      client.print("&outer=");
+      client.println(max.readCJTemperature());    
       client.println();
       client.stop();
     }
