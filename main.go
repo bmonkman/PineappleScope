@@ -4,18 +4,26 @@ import (
 	"database/sql"
 	"fmt"
 
+	//"github.com/jinzhu/gorm"
+	_ "github.com/jinzhu/gorm/dialects/sqlite"
+
 	_ "github.com/mattn/go-sqlite3"
 
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
+	// add gorm, add middleware
 	db, err := sql.Open("sqlite3", "test.db")
 	if err != nil {
 		panic(err)
 	}
 
 	r := gin.Default()
+
+	r.Static("/js", "/resources/js/")
+	r.Static("/css", "/resources/css/")
+
 	r.POST("/temperature", func(c *gin.Context) {
 		innerTemperature := c.PostForm("inner")
 		outerTemperature := c.PostForm("outer")
