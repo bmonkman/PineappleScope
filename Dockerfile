@@ -2,7 +2,7 @@
 #FROM gliderlabs/alpine:3.6
 FROM debian
 #ADD ca-certificates.crt /etc/ssl/certs/
-ADD PineappleScope-linux-amd64 /bin/app
+ADD PineappleScope-linux-amd64 /app
 ADD resources/ /resources/
 
 #RUN apk update \

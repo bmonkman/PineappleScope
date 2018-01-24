@@ -4,7 +4,7 @@ CREATE TABLE `temperature` (
     `created_date` DATE CURRENT_DATE,
     `session_id` INTEGER,
     `inner` REAL,
-    `outer` REALcccccchcigniukdjthfhiedhgvgvklvuftucuunrbtee
+    `outer` REAL
     
 );
 
