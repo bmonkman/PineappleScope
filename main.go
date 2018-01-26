@@ -1,10 +1,11 @@
 package main
 
 import (
-	"database/sql"
 	"fmt"
+	"strconv"
+	"time"
 
-	//"github.com/jinzhu/gorm"
+	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -12,53 +13,152 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+const newFiringThreshold = 3 // hour threshold for new measurements to be considered part of a firing
+
+type Firing struct {
+	ID                   uint
+	StartDate            time.Time
+	EndDate              time.Time
+	StartDateAmbientTemp float64
+	Cone                 uint
+	Name                 string
+	Notes                string
+
+	TemperatureReadings []TemperatureReading
+	Photos              []Photo
+}
+
+type TemperatureReading struct {
+	ID          uint
+	CreatedDate time.Time `gorm:"default:CURRENT_TIMESTAMP"`
+	FiringID    uint      `gorm:"index"`
+	Inner       float64
+	Outer       float64
+}
+
+type Photo struct {
+	ID          uint
+	FiringID    uint
+	CreatedDate time.Time
+	photoURL    string
+}
+
+// AddDbHandle middleware will add the db connection to the context
+func AddDbHandle(db *gorm.DB) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Set("databaseConn", db)
+		c.Next()
+	}
+}
+
+// GetOrCreateFiring If there was a recent temperature reading, return that reading's session, otherwise create a new session
+func GetOrCreateFiring(db *gorm.DB) uint {
+	var temperature = TemperatureReading{}
+
+	whereString := fmt.Sprintf("created_date >= datetime('now')-%d", newFiringThreshold*60*60)
+	db.Where(whereString).
+		Order("created_date desc").
+		First(&temperature)
+
+	if temperature.ID == 0 {
+		newFiring := Firing{StartDate: time.Now(), EndDate: time.Now(), Name: "New Firing"}
+		db.Create(&newFiring)
+		return newFiring.ID
+	}
+
+	return temperature.FiringID
+}
+
 func main() {
-	// add gorm, add middleware
-	db, err := sql.Open("sqlite3", "test.db")
+	r := gin.Default()
+
+	dbConnection, err := gorm.Open("sqlite3", "test.db")
 	if err != nil {
 		panic(err)
 	}
 
-	r := gin.Default()
+	// Auto create these tables
+	dbConnection.AutoMigrate(&Firing{}, &TemperatureReading{}, &Photo{})
 
+	// Use middleware
+	r.Use(AddDbHandle(dbConnection))
+
+	// Setup static assets
 	r.Static("/js", "/resources/js/")
 	r.Static("/css", "/resources/css/")
 
+	// Create a new temperature reading
 	r.POST("/temperature", func(c *gin.Context) {
-		innerTemperature := c.PostForm("inner")
-		outerTemperature := c.PostForm("outer")
+		innerTemperature, err := strconv.ParseFloat(c.PostForm("inner"), 64)
+		if err != nil {
+			panic(err)
+		}
 
-		statement, err := db.Prepare("INSERT INTO temperature (session_id, inner, outer) VALUES (?, ?, ?)")
+		outerTemperature, err := strconv.ParseFloat(c.PostForm("outer"), 64)
 		if err != nil {
 			panic(err)
 		}
-		_, err = statement.Exec(1, innerTemperature, outerTemperature)
-		if err != nil {
-			panic(err)
+
+		db, ok := c.MustGet("databaseConn").(*gorm.DB)
+		if !ok {
+			return
 		}
+
+		firingID := GetOrCreateFiring(db)
+		newReading := TemperatureReading{FiringID: firingID, Inner: innerTemperature, Outer: outerTemperature}
+		db.Create(&newReading)
 
 		c.Status(200)
 	})
 
-	r.GET("/list", func(c *gin.Context) {
+	// Get details about a specific firing
+	r.GET("/firing/:firingId", func(c *gin.Context) {
+		firingID := c.Param("firingId")
 
-		rows, _ := db.Query("SELECT inner FROM temperature")
-
-		var id int
-		var ret string
-
-		for rows.Next() {
-			_ = rows.Scan(&id)
-			ret += fmt.Sprintln(id)
+		db, ok := c.MustGet("databaseConn").(*gorm.DB)
+		if !ok {
+			return
 		}
 
-		rows.Close()
+		var firing Firing
+		db.Where("id = ?", firingID).Find(&firing)
 
-		c.String(200, ret)
+		c.JSON(200, firing)
+
+	})
+
+	// List all firings
+	r.GET("/firings", func(c *gin.Context) {
+
+		db, ok := c.MustGet("databaseConn").(*gorm.DB)
+		if !ok {
+			return
+		}
+
+		var firings []Firing
+		db.Find(&firings)
+
+		c.JSON(200, firings)
+
+	})
+
+	// List all readings for a firing
+	r.GET("/firing/:firingId/readings", func(c *gin.Context) {
+		firingID := c.Param("firingId")
+
+		db, ok := c.MustGet("databaseConn").(*gorm.DB)
+		if !ok {
+			return
+		}
+
+		var temperatureReadings []TemperatureReading
+		db.Where("firing_id = ?", firingID).Find(&temperatureReadings)
+
+		c.JSON(200, temperatureReadings)
 
 	})
 
 	r.Run(":8177")
-	db.Close()
+	dbConnection.Close()
 
 }
