@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"net/http"
 	"strconv"
 	"time"
 
@@ -84,8 +85,15 @@ func main() {
 	r.Use(AddDbHandle(dbConnection))
 
 	// Setup static assets
-	r.Static("/js", "/resources/js/")
-	r.Static("/css", "/resources/css/")
+	r.Static("/js", "./resources/js/")
+	r.Static("/css", "./resources/css/")
+
+	r.LoadHTMLGlob("resources/html/**")
+
+	// Index
+	r.GET("/", func(c *gin.Context) {
+		c.HTML(http.StatusOK, "index.tmpl.html", gin.H{})
+	})
 
 	// Create a new temperature reading
 	r.POST("/temperature", func(c *gin.Context) {

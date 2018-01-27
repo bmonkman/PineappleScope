@@ -20,3 +20,5 @@ arduino/ReportThermoTemperature/secrets.h
 main
 PineappleScope
 PineappleScope-linux-amd64
+
+test.db
