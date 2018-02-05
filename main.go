@@ -11,6 +11,8 @@ import (
 
 	_ "github.com/mattn/go-sqlite3"
 
+	"github.com/gin-contrib/multitemplate"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -70,6 +72,14 @@ func GetOrCreateFiring(db *gorm.DB) uint {
 	return temperature.FiringID
 }
 
+func createMyRender() multitemplate.Render {
+	r := multitemplate.New()
+	r.AddFromFiles("list", "resources/html/base.html", "resources/html/list.html")
+	r.AddFromFiles("firing", "resources/html/base.html", "resources/html/firing.html")
+	r.AddFromFiles("new-firing", "resources/html/base.html", "resources/html/new-firing.html")
+	return r
+}
+
 func main() {
 	r := gin.Default()
 
@@ -84,15 +94,22 @@ func main() {
 	// Use middleware
 	r.Use(AddDbHandle(dbConnection))
 
+	// Use multitemplate rendering
+	r.HTMLRender = createMyRender()
+
 	// Setup static assets
 	r.Static("/js", "./resources/js/")
 	r.Static("/css", "./resources/css/")
 
-	r.LoadHTMLGlob("resources/html/**")
-
 	// Index
 	r.GET("/", func(c *gin.Context) {
-		c.HTML(http.StatusOK, "index.tmpl.html", gin.H{})
+		c.HTML(http.StatusOK, "list", gin.H{"title": "Firings"})
+	})
+	r.GET("/firing", func(c *gin.Context) {
+		c.HTML(http.StatusOK, "firing", gin.H{"title": "Firing"})
+	})
+	r.GET("/new-firing", func(c *gin.Context) {
+		c.HTML(http.StatusOK, "new-firing", gin.H{"title": "New Firing"})
 	})
 
 	// Create a new temperature reading
