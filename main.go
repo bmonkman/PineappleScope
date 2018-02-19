@@ -72,7 +72,7 @@ func GetOrCreateFiring(db *gorm.DB) uint {
 	return temperature.FiringID
 }
 
-func createMyRender() multitemplate.Render {
+func setupTemplates() multitemplate.Render {
 	r := multitemplate.New()
 	r.AddFromFiles("list", "resources/html/base.html", "resources/html/list.html")
 	r.AddFromFiles("firing", "resources/html/base.html", "resources/html/firing.html")
@@ -81,6 +81,7 @@ func createMyRender() multitemplate.Render {
 }
 
 func main() {
+	gin.SetMode(gin.DebugMode)
 	r := gin.Default()
 
 	dbConnection, err := gorm.Open("sqlite3", "test.db")
@@ -95,7 +96,7 @@ func main() {
 	r.Use(AddDbHandle(dbConnection))
 
 	// Use multitemplate rendering
-	r.HTMLRender = createMyRender()
+	r.HTMLRender = setupTemplates()
 
 	// Setup static assets
 	r.Static("/js", "./resources/js/")
@@ -103,10 +104,7 @@ func main() {
 
 	// Index
 	r.GET("/", func(c *gin.Context) {
-		c.HTML(http.StatusOK, "list", gin.H{"title": "Firings"})
-	})
-	r.GET("/firing", func(c *gin.Context) {
-		c.HTML(http.StatusOK, "firing", gin.H{"title": "Firing"})
+		c.Redirect(301, "/firings")
 	})
 	r.GET("/new-firing", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "new-firing", gin.H{"title": "New Firing"})
@@ -148,7 +146,26 @@ func main() {
 		var firing Firing
 		db.Where("id = ?", firingID).Find(&firing)
 
-		c.JSON(200, firing)
+		var temperatureReadings []TemperatureReading
+		db.Where("firing_id = ?", firingID).Find(&temperatureReadings)
+
+		c.HTML(http.StatusOK, "firing", gin.H{"title": "Firing: " + firing.Name, "firing": firing, "temperatureReadings": temperatureReadings})
+
+	})
+
+	// Edit details about a specific firing
+	r.GET("/firing/:firingId/edit", func(c *gin.Context) {
+		firingID := c.Param("firingId")
+
+		db, ok := c.MustGet("databaseConn").(*gorm.DB)
+		if !ok {
+			return
+		}
+
+		var firing Firing
+		db.Where("id = ?", firingID).Find(&firing)
+
+		c.HTML(http.StatusOK, "new-firing", gin.H{"title": "Edit Firing: " + firing.Name, "firing": firing})
 
 	})
 
@@ -163,7 +180,7 @@ func main() {
 		var firings []Firing
 		db.Find(&firings)
 
-		c.JSON(200, firings)
+		c.HTML(http.StatusOK, "list", gin.H{"title": "Firings", "firings": firings})
 
 	})
 
@@ -183,7 +200,7 @@ func main() {
 
 	})
 
-	r.Run(":8177")
+	r.Run(":1111")
 	dbConnection.Close()
 
 }

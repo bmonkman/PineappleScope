@@ -1,9 +1,38 @@
 
 {{ define "content" }}
+<a href="/firing/{{ .firing.ID }}/edit" id="add-firing">
+    <button class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-button--accent">
+        Edit
+    </button>
+</a>
+    <div class="mdl-list" style="width:400px;">
+        <div class="mdl-list__item">
+            <span class="mdl-list__item-primary-content">Start/End Date:</span>
+            <span class="mdl-list__item-secondary-content">{{ .firing.StartDate.Format "Mon, Jan _2 15:04:05" }} - {{ .firing.EndDate.Format "Mon, Jan _2 15:04:05" }}</span>
+        </div>
+        <div class="mdl-list__item">
+            <span class="mdl-list__item-primary-content">Starting ambient temp:</span>
+            <span class="mdl-list__item-secondary-content">{{ .firing.StartDateAmbientTemp }}˚C</span>
+        </div>
+        <div class="mdl-list__item">
+            <span class="mdl-list__item-primary-content">Cone:</span>
+            <span class="mdl-list__item-secondary-content">{{ .firing.Cone }}</span>
+        </div>
+        <div class="mdl-list__item">
+            <span class="mdl-list__item-primary-content">Notes:</span>
+            <span class="mdl-list__item-secondary-content">{{ .firing.Notes }}</span>
+        </div>
+    </div>
+    
     <div class="mdl-grid">
 
         <div class="mdl-shadow--2dp mdl-color--white mdl-cell mdl-cell--8-col">
             <canvas id="myChart" width="200" height="200"></canvas>
         </div>
     </div>
+    <table>
+    {{ range .temperatureReadings }}
+        <tr><td>{{ . }}</td></tr>    
+    {{ end }}
+    </table>
 {{ end }}

@@ -1,14 +1,12 @@
 {{ define "content" }}
     <ul class='mdl-list'>
-        <a href="/firing"><li class="mdl-list__item">
-            <span>Mugs</span>
+    {{ range.firings }}
+        <a href="/firing/{{ .ID }}"><li class="mdl-list__item mdl-list__item--two-line">
+            <span class="mdl-list__item-primary-content">
+                <span>{{ .Name }}</span>
+                <span class="mdl-list__item-sub-title">{{ .StartDate.Format "Mon, Jan _2 15:04:05" }}</span>
+            </span>
         </li></a>
-        <a href="/firing"><li class="mdl-list__item">
-            <span>Bowls</span>
-        </li></a>
-        <a href="/firing"><li class="mdl-list__item">
-            <span>Misc stuff</span>
-        </li></a>
+    {{ end }}
     </ul>            
 {{ end }}
-
