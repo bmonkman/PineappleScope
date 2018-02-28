@@ -9,8 +9,10 @@ ADD resources/ /resources/
 #     && apk add sqlite \
 #     && apk add musl-dev
 #RUN apt-get update && apt-get install -y sqlite
+ENV TZ=America/Vancouver
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
-EXPOSE 8177
+EXPOSE 1111
 
 VOLUME /var/db/
 

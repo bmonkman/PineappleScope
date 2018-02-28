@@ -8,12 +8,12 @@ int keyIndex = 0; // network key Index number (needed only for WEP)
 
 int status = WL_IDLE_STATUS;
 IPAddress server(192,168,86,142);
+//IPAddress server(192,168,86,250);
 //char server[] = "192.168.86.250";
-int port = 8177;
+int port = 1111;
 
 float reportTemperatureThreshold = 40.0; // Degrees C before active monitoring kicks in
-int overTemperatureDelay = 5; // Seconds between reporting when actively monitoring
-int underTemperatureDelay = 20; // Seconds between checks when not actively monitoring
+unsigned long reportingDelay = 5 * 60 * 1000L; // Milliseconds between reporting
 
 
 // Initialize the Ethernet client library
@@ -23,6 +23,8 @@ WiFiClient client;
 Adafruit_MAX31856 max = Adafruit_MAX31856(5, 6, 9, 10);
 
 void setup() {
+  pinMode(LED_BUILTIN, OUTPUT);
+  digitalWrite(LED_BUILTIN, LOW);
     //Configure pins for Adafruit ATWINC1500 Breakout
   WiFi.setPins(8,7,4);
   //Initialize serial and wait for port to open:
@@ -53,37 +55,52 @@ void setup() {
   }
   Serial.println("Connected to wifi");
   printWiFiStatus();
-
-  Serial.println("\nStarting connection to server...");
-  // if you get a connection, report back via serial:
+  digitalWrite(LED_BUILTIN, HIGH);
 }
 
 float temperature;
+long currentMillis = reportingDelay*-1;
 void loop() {
-
-  temperature = max.readThermocoupleTemperature();
-  if (temperature > reportTemperatureThreshold) {
-
-    if (client.connect(server, port)) {
-      Serial.println("connected to server");
-
-      Serial.print("Thermocouple Temp: "); Serial.println(temperature);
-
-      client.println("POST /report HTTP/1.1");
-      client.println("Connection: close");
-      client.println("Content-Type: application/x-www-form-urlencoded");
-      client.println("");
-      client.print("inner=");
-      client.print(temperature);
-      client.print("&outer=");
-      client.println(max.readCJTemperature());    
-      client.println();
+  Serial.print(millis()); Serial.print(" > "); Serial.println(currentMillis + reportingDelay);
+  if (millis() > currentMillis + reportingDelay)
+  {
+    currentMillis = millis();
+    temperature = max.readThermocoupleTemperature();
+    Serial.print("Thermocouple Temp: "); Serial.println(temperature);
+    if (temperature > reportTemperatureThreshold) {
+      Serial.println("\nTemperature above threshold, starting connection to server... ");
+  
       client.stop();
+      if (client.connect(server, port)) {
+        Serial.println("connected to server");
+  
+  
+        char postData[32];
+        char innerString[7];
+        char outerString[7];
+        dtostrf(temperature, 4, 2, innerString);
+        dtostrf(max.readCJTemperature(), 4, 2, outerString);
+        sprintf(postData, "inner=%s&outer=%s", innerString, outerString);
+        
+        client.println("POST /temperature HTTP/1.1");
+        client.println("Connection: close");
+        client.println("Content-Type: application/x-www-form-urlencoded");
+        client.print("Content-Length: ");
+        client.println(strlen(postData));
+        client.println("Host: pineapplescope");
+        client.println();
+        client.print(postData);
+        client.println();
+        client.stop();
+        Serial.println("Sent data");
+  
+      }
     }
-    delay(overTemperatureDelay*1000);  
-  } else {
-    delay(underTemperatureDelay*1000);
   }
+  delay(1000);
+  digitalWrite(LED_BUILTIN, HIGH);
+  delay(1000);
+  digitalWrite(LED_BUILTIN, LOW);
 }
 
 

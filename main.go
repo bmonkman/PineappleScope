@@ -17,6 +17,7 @@ import (
 )
 
 const newFiringThreshold = 3 // hour threshold for new measurements to be considered part of a firing
+const version = "0.0.1"
 
 type Firing struct {
 	ID                   uint
@@ -33,7 +34,7 @@ type Firing struct {
 
 type TemperatureReading struct {
 	ID          uint
-	CreatedDate time.Time `gorm:"default:CURRENT_TIMESTAMP"`
+	CreatedDate time.Time `gorm:"default:(datetime('now','localtime'))"`
 	FiringID    uint      `gorm:"index"`
 	Inner       float64
 	Outer       float64
@@ -54,22 +55,46 @@ func AddDbHandle(db *gorm.DB) gin.HandlerFunc {
 	}
 }
 
+// Calculate the current cone number based on the temperature
+func CalculateCone(temperature float64) uint {
+	/*var cones char[float] = {
+		'1': 2077.0
+		'2': 2088
+		'3': 2106
+		'4': 2120
+		'5': 2163
+		'6': 2228
+		'7': 2259
+	}*/
+	return 1
+}
+
 // GetOrCreateFiring If there was a recent temperature reading, return that reading's session, otherwise create a new session
 func GetOrCreateFiring(db *gorm.DB) uint {
 	var temperature = TemperatureReading{}
 
-	whereString := fmt.Sprintf("created_date >= datetime('now')-%d", newFiringThreshold*60*60)
+	whereString := fmt.Sprintf("created_date >= datetime('now', 'localtime', '-%d hours')", newFiringThreshold)
 	db.Where(whereString).
 		Order("created_date desc").
 		First(&temperature)
 
-	if temperature.ID == 0 {
-		newFiring := Firing{StartDate: time.Now(), EndDate: time.Now(), Name: "New Firing"}
-		db.Create(&newFiring)
-		return newFiring.ID
+	var firing Firing
+	if temperature.ID == 0 || temperature.FiringID == 0 {
+		firing = Firing{StartDate: time.Now(), EndDate: time.Now(), Name: "New Firing"}
+		db.Save(&firing)
+	} else {
+		db.First(&firing, temperature.FiringID)
+		firing.EndDate = time.Now()
+
+		currentCone := CalculateCone(temperature.Inner)
+		if firing.Cone < currentCone {
+			firing.Cone = currentCone
+		}
+
+		db.Save(&firing)
 	}
 
-	return temperature.FiringID
+	return firing.ID
 }
 
 func setupTemplates() multitemplate.Render {
@@ -84,7 +109,7 @@ func main() {
 	gin.SetMode(gin.DebugMode)
 	r := gin.Default()
 
-	dbConnection, err := gorm.Open("sqlite3", "test.db")
+	dbConnection, err := gorm.Open("sqlite3", "/var/db/pineapplescope.db")
 	if err != nil {
 		panic(err)
 	}
@@ -109,6 +134,9 @@ func main() {
 	r.GET("/new-firing", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "new-firing", gin.H{"title": "New Firing"})
 	})
+	r.GET("/version", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"version": version})
+	})
 
 	// Create a new temperature reading
 	r.POST("/temperature", func(c *gin.Context) {
@@ -128,8 +156,9 @@ func main() {
 		}
 
 		firingID := GetOrCreateFiring(db)
+
 		newReading := TemperatureReading{FiringID: firingID, Inner: innerTemperature, Outer: outerTemperature}
-		db.Create(&newReading)
+		db.Save(&newReading)
 
 		c.Status(200)
 	})
@@ -144,7 +173,7 @@ func main() {
 		}
 
 		var firing Firing
-		db.Where("id = ?", firingID).Find(&firing)
+		db.First(&firing, firingID)
 
 		var temperatureReadings []TemperatureReading
 		db.Where("firing_id = ?", firingID).Find(&temperatureReadings)
@@ -153,7 +182,7 @@ func main() {
 
 	})
 
-	// Edit details about a specific firing
+	// Show form to edit details about a specific firing
 	r.GET("/firing/:firingId/edit", func(c *gin.Context) {
 		firingID := c.Param("firingId")
 
@@ -163,10 +192,31 @@ func main() {
 		}
 
 		var firing Firing
-		db.Where("id = ?", firingID).Find(&firing)
+		db.First(&firing, firingID)
 
 		c.HTML(http.StatusOK, "new-firing", gin.H{"title": "Edit Firing: " + firing.Name, "firing": firing})
 
+	})
+
+	// Edit details about a specific firing
+	r.POST("/firing/:firingId", func(c *gin.Context) {
+		firingID := c.Param("firingId")
+		name := c.PostForm("name")
+		notes := c.PostForm("notes")
+		db, ok := c.MustGet("databaseConn").(*gorm.DB)
+		if !ok {
+			return
+		}
+
+		var firing Firing
+		db.Where("id = ?", firingID).Find(&firing)
+		db.First(&firing, firingID)
+		firing.Name = name
+		firing.Notes = notes
+		fmt.Println(firing)
+		db.Save(&firing)
+
+		c.Redirect(301, "/firing/"+firingID)
 	})
 
 	// List all firings

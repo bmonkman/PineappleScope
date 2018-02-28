@@ -27,7 +27,7 @@
     <div class="mdl-grid">
 
         <div class="mdl-shadow--2dp mdl-color--white mdl-cell mdl-cell--8-col">
-            <canvas id="myChart" width="200" height="200"></canvas>
+            <canvas id="myChart" width="400" height="400"></canvas>
         </div>
     </div>
     <table>
@@ -35,4 +35,53 @@
         <tr><td>{{ . }}</td></tr>    
     {{ end }}
     </table>
+
+
+    <script>
+        window.onload = function(){
+            var ctx = document.getElementById("myChart").getContext('2d');
+
+
+
+            var data = {
+                // Labels should be Date objects
+                labels: [ {{ range .temperatureReadings }}moment("{{ .CreatedDate.Format "2006-01-02 15:04:05" }}"),{{ end }} ],
+                datasets: [{
+                    fill: false,
+                    label: 'Temperature',
+                    data: [{{ range .temperatureReadings }}{{ .Inner }},{{ end }}],
+                    borderColor: '#fe8b36',
+                    backgroundColor: '#fe8b36',
+                    lineTension: 0,
+                }]
+            }
+
+            var myChart = new Chart(ctx, {
+                type: 'line',
+                data: data,
+                options: {
+                    scales: {
+                        xAxes: [{
+                            type: "time",
+                            time: {
+                                unit: 'minute',
+                                unitStepSize: 5,
+                                round: 'minute',
+                                tooltipFormat: "h:mm:ss a",
+                                displayFormats: {
+                                hour: 'MMM D, h:mm'
+                                }
+                            }
+                            }],
+                        yAxes: [{
+                            ticks: {
+                                beginAtZero:false
+                            }
+                        }]
+                    }
+                    
+                }
+            });
+        }
+            </script>    
 {{ end }}

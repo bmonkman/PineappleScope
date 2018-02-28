@@ -11,4 +11,7 @@ container:
 	go get github.com/karalabe/xgo
 	xgo --targets=linux/amd64 .
 	
-	docker build -t pineapplescope-test -f Dockerfile .
+	docker build -t bmonkman/pineapplescope -f Dockerfile .
+
+push:
+	docker push bmonkman/pineapplescope
