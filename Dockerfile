@@ -14,6 +14,7 @@ RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
 EXPOSE 1111
 
+ENV DBFILE /var/db/pineapplescope.db
 VOLUME /var/db/
 
 #CMD ["sleep","1000"]
