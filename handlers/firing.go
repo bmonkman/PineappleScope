@@ -3,6 +3,7 @@ package handlers
 import (
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/bmonkman/PineappleScope/models"
 	"github.com/gin-gonic/gin"
@@ -43,7 +44,10 @@ func (f *FiringHandlers) getFiring(c *gin.Context) {
 	var temperatureReadings []models.TemperatureReading
 	db.Where("firing_id = ?", firingID).Find(&temperatureReadings)
 
-	c.HTML(http.StatusOK, "firing", gin.H{"title": "Firing: " + firing.Name, "firing": firing, "temperatureReadings": temperatureReadings})
+	c.HTML(http.StatusOK, "firing", gin.H{
+		"title":               "Firing: " + firing.Name,
+		"firing":              firing,
+		"temperatureReadings": temperatureReadings})
 
 }
 
@@ -59,7 +63,9 @@ func (f *FiringHandlers) showEditFiring(c *gin.Context) {
 	var firing models.Firing
 	db.First(&firing, firingID)
 
-	c.HTML(http.StatusOK, "new-firing", gin.H{"title": "Edit Firing: " + firing.Name, "firing": firing})
+	c.HTML(http.StatusOK, "new-firing", gin.H{
+		"title":  "Edit Firing: " + firing.Name,
+		"firing": firing})
 
 }
 
@@ -92,9 +98,12 @@ func (f *FiringHandlers) getFirings(c *gin.Context) {
 	}
 
 	var firings []models.Firing
-	db.Find(&firings)
+	db.Order("end_date DESC").Find(&firings)
 
-	c.HTML(http.StatusOK, "list", gin.H{"title": "Firings", "firings": firings})
+	c.HTML(http.StatusOK, "list", gin.H{
+		"title":                  "Firings",
+		"firings":                firings,
+		"currentFiringThreshold": time.Now().Add(-3 * time.Hour)})
 
 }
 

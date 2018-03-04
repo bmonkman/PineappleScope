@@ -39,9 +39,10 @@ func main() {
 	r := gin.Default()
 
 	dbFile := os.Getenv("DBFILE")
-	if dbFile == "" {
+	if len(dbFile) == 0 {
 		dbFile = "pineapplescope.db"
 	}
+
 	dbConnection, err := gorm.Open("sqlite3", dbFile)
 	if err != nil {
 		panic(err)
@@ -59,6 +60,7 @@ func main() {
 	// Setup static assets
 	r.Static("/js", "./resources/js/")
 	r.Static("/css", "./resources/css/")
+	r.StaticFile("/favicon.ico", "./resources/favicon.ico")
 
 	// Index
 	r.GET("/", func(c *gin.Context) {

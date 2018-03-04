@@ -1,6 +1,8 @@
 package models
 
-import "time"
+import (
+	"time"
+)
 
 type Firing struct {
 	ID                   uint
@@ -13,6 +15,10 @@ type Firing struct {
 
 	TemperatureReadings []TemperatureReading
 	Photos              []Photo
+}
+
+func (f *Firing) Duration() int64 {
+	return (f.EndDate.Unix() - f.StartDate.Unix()) / 60 / 60
 }
 
 type TemperatureReading struct {
