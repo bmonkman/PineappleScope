@@ -6,14 +6,13 @@
 
 int keyIndex = 0; // network key Index number (needed only for WEP)
 
-int status = WL_IDLE_STATUS;
 IPAddress server(192,168,86,142);
 //IPAddress server(192,168,86,250);
 //char server[] = "192.168.86.250";
 int port = 1111;
 
 float reportTemperatureThreshold = 40.0; // Degrees C before active monitoring kicks in
-unsigned long reportingDelay = 5 * 60 * 1000L; // Milliseconds between reporting
+unsigned long reportingDelay = 10 * 60 * 1000L; // Milliseconds between reporting
 
 
 // Initialize the Ethernet client library
@@ -43,18 +42,7 @@ void setup() {
     while (true);
   }
 
-  // attempt to connect to WiFi network:
-  while (status != WL_CONNECTED) {
-    Serial.print("Attempting to connect to SSID: ");
-    Serial.println(ssid);
-    // Connect to WPA/WPA2 network. Change this line if using open or WEP network:
-    status = WiFi.begin(ssid, pass);
-
-    // wait 10 seconds for connection:
-    delay(10000);
-  }
-  Serial.println("Connected to wifi");
-  printWiFiStatus();
+  wifiConnect();
   digitalWrite(LED_BUILTIN, HIGH);
 }
 
@@ -70,6 +58,11 @@ void loop() {
     if (temperature > reportTemperatureThreshold) {
       Serial.println("\nTemperature above threshold, starting connection to server... ");
   
+      // Reconnect wifi if necessary
+      if(WiFi.status() != WL_CONNECTED) {
+          wifiConnect();
+      }
+      
       client.stop();
       if (client.connect(server, port)) {
         Serial.println("connected to server");
@@ -103,6 +96,21 @@ void loop() {
   digitalWrite(LED_BUILTIN, LOW);
 }
 
+void wifiConnect() {
+  int status = WL_IDLE_STATUS;
+  // attempt to connect to WiFi network:
+  while (status != WL_CONNECTED) {
+    Serial.print("Attempting to connect to SSID: ");
+    Serial.println(ssid);
+    // Connect to WPA/WPA2 network. Change this line if using open or WEP network:
+    status = WiFi.begin(ssid, pass);
+
+    // wait 10 seconds for connection:
+    delay(10000);
+  }
+  Serial.println("Connected to wifi");
+  printWiFiStatus();
+}
 
 void printWiFiStatus() {
   // print the SSID of the network you're attached to:
