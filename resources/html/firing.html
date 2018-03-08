@@ -15,35 +15,50 @@
             <span class="mdl-list__item-secondary-content">{{ .firing.StartDateAmbientTemp }}˚C</span>
         </div>
         <div class="mdl-list__item">
+            <span class="mdl-list__item-primary-content">Peak temp:</span>
+            <span class="mdl-list__item-secondary-content">{{ .peakTemperature }}˚C</span>
+        </div>
+        <div class="mdl-list__item">
             <span class="mdl-list__item-primary-content">Cone:</span>
-            <span class="mdl-list__item-secondary-content">{{ .firing.Cone }}</span>
+            <span class="mdl-list__item-secondary-content">{{ .firing.ConeNumber }}</span>
         </div>
         <div class="mdl-list__item">
             <span class="mdl-list__item-primary-content">Notes:</span>
             <span class="mdl-list__item-secondary-content">{{ .firing.Notes }}</span>
         </div>
     </div>
-    
+
     <div class="mdl-grid">
 
         <div class="mdl-shadow--2dp mdl-color--white mdl-cell mdl-cell--8-col">
             <canvas id="myChart" width="400" height="400"></canvas>
         </div>
     </div>
-    <div class="mdl-button" onclick="document.getElementById('raw-data').style='display:;';">Show Raw Data</div>
-    <div class="mdl-button" onclick="addOuterData();">Show Ambient Temperatures</div>
+    <div class="mdl-button mdl-button--colored mdl-button--raised mdl-js-button mdl-js-ripple-effect" style="margin:5px;" onclick="document.getElementById('raw-data').style='display:;';">Raw Data</div>
+    <div class="mdl-button mdl-button--colored mdl-button--raised mdl-js-button mdl-js-ripple-effect" style="margin:5px;" onclick="addOuterData();">Ambient Temperatures</div>
     <table id="raw-data"style="display: none;">
     {{ range .temperatureReadings }}
-        <tr><td>{{ . }}</td></tr>    
+        <tr><td>{{ . }}</td></tr>
     {{ end }}
     </table>
 
 
     <script>
         var myChart;
+        var innerOnlyData = {
+                // Labels should be Date objects
+                labels: [ {{ range .temperatureReadings }}moment("{{ .CreatedDate.Format "2006-01-02 15:04:05" }}"),{{ end }} ],
+                datasets: [{
+                    fill: false,
+                    label: 'Temperature',
+                    data: [{{ range .temperatureReadings }}{{ .Inner }},{{ end }}],
+                    borderColor: '#fe8b36',
+                    backgroundColor: '#fe8b36',
+                    lineTension: 0.1
+                }]
+            };
 
-        function addOuterData() {
-            myChart.data = {
+            var allData = {
                 // Labels should be Date objects
                 labels: [ {{ range .temperatureReadings }}moment("{{ .CreatedDate.Format "2006-01-02 15:04:05" }}"),{{ end }} ],
                 datasets: [{
@@ -66,7 +81,14 @@
                 }]
             };
 
-            myChart.options.scales.yAxes[1].display=true;
+        function addOuterData() {
+            if (myChart.options.scales.yAxes[1].display == false) {
+                myChart.data = allData
+            } else {
+                myChart.data = innerOnlyData
+            }
+
+            myChart.options.scales.yAxes[1].display=!myChart.options.scales.yAxes[1].display;
 
             myChart.update();
         }
@@ -74,22 +96,11 @@
         window.onload = function(){
             var ctx = document.getElementById("myChart").getContext('2d');
 
-            var data = {
-                // Labels should be Date objects
-                labels: [ {{ range .temperatureReadings }}moment("{{ .CreatedDate.Format "2006-01-02 15:04:05" }}"),{{ end }} ],
-                datasets: [{
-                    fill: false,
-                    label: 'Temperature',
-                    data: [{{ range .temperatureReadings }}{{ .Inner }},{{ end }}],
-                    borderColor: '#fe8b36',
-                    backgroundColor: '#fe8b36',
-                    lineTension: 0.1
-                }]
-            };
+
 
             myChart = new Chart(ctx, {
                 type: 'line',
-                data: data,
+                data: innerOnlyData,
                 options: {
                     scales: {
                         xAxes: [{
@@ -118,9 +129,9 @@
                             display: false
                         }]
                     }
-                    
+
                 }
             });
         }
-            </script>
+    </script>
 {{ end }}

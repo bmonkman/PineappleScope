@@ -45,10 +45,18 @@ func (f *FiringHandlers) getFiring(c *gin.Context) {
 	var temperatureReadings []models.TemperatureReading
 	db.Where("firing_id = ?", firingID).Find(&temperatureReadings)
 
+	var peakTemperature = 0.0
+	for _, temp := range temperatureReadings {
+		if temp.Inner > peakTemperature {
+			peakTemperature = temp.Inner
+		}
+	}
+
 	c.HTML(http.StatusOK, "firing", gin.H{
 		"title":               "Firing: " + firing.Name,
 		"firing":              firing,
-		"temperatureReadings": temperatureReadings})
+		"temperatureReadings": temperatureReadings,
+		"peakTemperature":     peakTemperature})
 
 }
 
@@ -76,7 +84,9 @@ func (f *FiringHandlers) showEditFiring(c *gin.Context) {
 func (f *FiringHandlers) editFiring(c *gin.Context) {
 	firingID := c.Param("firingId")
 	name := c.PostForm("name")
+	coneNumber := c.PostForm("coneNumber")
 	notes := c.PostForm("notes")
+
 	db, ok := c.MustGet("databaseConn").(*gorm.DB)
 	if !ok {
 		return
@@ -91,6 +101,7 @@ func (f *FiringHandlers) editFiring(c *gin.Context) {
 	db.First(&firing, firingID)
 	firing.Name = name
 	firing.Notes = notes
+	firing.ConeNumber = coneNumber
 	fmt.Println(firing)
 	db.Save(&firing)
 

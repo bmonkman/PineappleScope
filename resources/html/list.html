@@ -4,10 +4,10 @@
         <a href="/firing/{{ .ID }}"><li class="mdl-list__item mdl-list__item--two-line">
             <span class="mdl-list__item-primary-content">
                 {{ if gt .EndDate.Unix $.currentFiringThreshold.Unix }}<i class="material-icons mdl-list__item-icon">whatshot</i>{{ end }}
-                <span>{{ .Name }}</span>
+                <span>{{ .Name }}</span> <span>(∆{{ .ConeNumber }})</span>
                 <span class="mdl-list__item-sub-title">{{ .StartDate.Format "Mon, Jan _2 3:04PM" }} ( {{ .Duration }} Hours )</span>
             </span>
         </li></a>
     {{ end }}
-    </ul>            
+    </ul>
 {{ end }}

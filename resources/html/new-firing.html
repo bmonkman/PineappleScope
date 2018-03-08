@@ -1,4 +1,4 @@
-{{ define "content" }}    
+{{ define "content" }}
     <div class="mdl-card mdl-shadow--2dp">
         <div class="mdl-card__actions mdl-card--border">
             <form action="/firing/{{ .firing.ID }}" method="POST" name="editform">
@@ -7,10 +7,14 @@
                     <label class="mdl-textfield__label" for="name">Name...</label>
                 </div>
                 <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label">
-                        <input class="mdl-textfield__input" type="text" id="notes" name="notes" value="{{ .firing.Notes }}">
-                        <label class="mdl-textfield__label" for="description">Notes...</label>
-                    </div>
-                </form>
+                    <input class="mdl-textfield__input" type="text" id="notes" name="notes" value="{{ .firing.Notes }}">
+                    <label class="mdl-textfield__label" for="description">Notes...</label>
+                </div>
+                <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label">
+                    <input class="mdl-textfield__input" type="text" id="coneNumber" name="coneNumber" value="{{ .firing.ConeNumber }}">
+                    <label class="mdl-textfield__label" for="description">Cone...</label>
+                </div>
+            </form>
             <a class="mdl-button mdl-button--colored mdl-button--raised mdl-js-button mdl-js-ripple-effect " onclick="editform.submit();">
                 Save
             </a>

@@ -9,7 +9,7 @@ type Firing struct {
 	StartDate            time.Time
 	EndDate              time.Time
 	StartDateAmbientTemp float64
-	Cone                 uint
+	ConeNumber           string
 	Name                 string
 	Notes                string
 

@@ -69,27 +69,8 @@ func getOrCreateFiring(db *gorm.DB) uint {
 		db.First(&firing, temperature.FiringID)
 		firing.EndDate = time.Now()
 
-		currentCone := CalculateCone(temperature.Inner)
-		if firing.Cone < currentCone {
-			firing.Cone = currentCone
-		}
-
 		db.Save(&firing)
 	}
 
 	return firing.ID
-}
-
-// CalculateCone Calculates the current cone number based on the temperature
-func CalculateCone(temperature float64) uint {
-	/*var cones char[float] = {
-		'1': 2077.0
-		'2': 2088
-		'3': 2106
-		'4': 2120
-		'5': 2163
-		'6': 2228
-		'7': 2259
-	}*/
-	return 1
 }
