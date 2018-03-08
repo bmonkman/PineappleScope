@@ -30,7 +30,9 @@
             <canvas id="myChart" width="400" height="400"></canvas>
         </div>
     </div>
-    <table>
+    <div class="mdl-button" onclick="document.getElementById('raw-data').style='display:;';">Show Raw Data</div>
+    <div class="mdl-button" onclick="addOuterData();">Show Ambient Temperatures</div>
+    <table id="raw-data"style="display: none;">
     {{ range .temperatureReadings }}
         <tr><td>{{ . }}</td></tr>    
     {{ end }}
@@ -38,10 +40,39 @@
 
 
     <script>
+        var myChart;
+
+        function addOuterData() {
+            myChart.data = {
+                // Labels should be Date objects
+                labels: [ {{ range .temperatureReadings }}moment("{{ .CreatedDate.Format "2006-01-02 15:04:05" }}"),{{ end }} ],
+                datasets: [{
+                    fill: false,
+                    label: 'Inner Temperature',
+                    data: [{{ range .temperatureReadings }}{{ .Inner }},{{ end }}],
+                    borderColor: '#fe8b36',
+                    backgroundColor: '#fe8b36',
+                    lineTension: 0.1,
+                    yAxisID: 'A'
+                },
+                {
+                    fill: false,
+                    label: 'Outer Temperature',
+                    data: [{{ range .temperatureReadings }}{{ .Outer }},{{ end }}],
+                    borderColor: '#4caf50',
+                    backgroundColor: '#4caf50',
+                    lineTension: 0.1,
+                    yAxisID: 'B'
+                }]
+            };
+
+            myChart.options.scales.yAxes[1].display=true;
+
+            myChart.update();
+        }
+
         window.onload = function(){
             var ctx = document.getElementById("myChart").getContext('2d');
-
-
 
             var data = {
                 // Labels should be Date objects
@@ -52,11 +83,11 @@
                     data: [{{ range .temperatureReadings }}{{ .Inner }},{{ end }}],
                     borderColor: '#fe8b36',
                     backgroundColor: '#fe8b36',
-                    lineTension: 0,
+                    lineTension: 0.1
                 }]
-            }
+            };
 
-            var myChart = new Chart(ctx, {
+            myChart = new Chart(ctx, {
                 type: 'line',
                 data: data,
                 options: {
@@ -65,7 +96,7 @@
                             type: "time",
                             time: {
                                 unit: 'minute',
-                                unitStepSize: 5,
+                                unitStepSize: 30,
                                 round: 'minute',
                                 tooltipFormat: "h:mm:ss a",
                                 displayFormats: {
@@ -74,14 +105,22 @@
                             }
                             }],
                         yAxes: [{
+                            id: 'A',
+                            type: 'linear',
+                            position: 'left',
                             ticks: {
                                 beginAtZero:false
                             }
+                        }, {
+                            id: 'B',
+                            type: 'linear',
+                            position: 'right',
+                            display: false
                         }]
                     }
                     
                 }
             });
         }
-            </script>    
+            </script>
 {{ end }}

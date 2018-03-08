@@ -60,6 +60,7 @@ func main() {
 	// Setup static assets
 	r.Static("/js", "./resources/js/")
 	r.Static("/css", "./resources/css/")
+	r.Static("/images", "./resources/images/")
 	r.StaticFile("/favicon.ico", "./resources/favicon.ico")
 
 	// Index

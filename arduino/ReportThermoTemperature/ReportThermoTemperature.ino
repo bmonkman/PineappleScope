@@ -97,6 +97,9 @@ void loop() {
 }
 
 void wifiConnect() {
+  WiFi.end();
+  nm_bsp_reset();
+
   int status = WL_IDLE_STATUS;
   // attempt to connect to WiFi network:
   while (status != WL_CONNECTED) {

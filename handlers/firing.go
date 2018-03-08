@@ -27,6 +27,7 @@ func (f *FiringHandlers) Register() {
 	f.renderer.POST("/firing/:firingId", f.editFiring)
 	f.renderer.GET("/firings", f.getFirings)
 	f.renderer.GET("/firing/:firingId/readings", f.getReadingsForFiring)
+	f.renderer.DELETE("/firing/:firingId", f.deleteFiring)
 }
 
 // Get details about a specific firing
@@ -63,10 +64,12 @@ func (f *FiringHandlers) showEditFiring(c *gin.Context) {
 	var firing models.Firing
 	db.First(&firing, firingID)
 
+	if firing.Name == "New Firing" {
+		firing.Name = ""
+	}
 	c.HTML(http.StatusOK, "new-firing", gin.H{
 		"title":  "Edit Firing: " + firing.Name,
 		"firing": firing})
-
 }
 
 // Edit details about a specific firing
@@ -77,6 +80,10 @@ func (f *FiringHandlers) editFiring(c *gin.Context) {
 	db, ok := c.MustGet("databaseConn").(*gorm.DB)
 	if !ok {
 		return
+	}
+
+	if name == "" {
+		name = "New Firing"
 	}
 
 	var firing models.Firing
@@ -121,4 +128,18 @@ func (f *FiringHandlers) getReadingsForFiring(c *gin.Context) {
 
 	c.JSON(200, temperatureReadings)
 
+}
+
+// Delete a firing
+func (f *FiringHandlers) deleteFiring(c *gin.Context) {
+	firingID := c.Param("firingId")
+
+	db, ok := c.MustGet("databaseConn").(*gorm.DB)
+	if !ok {
+		return
+	}
+
+	db.Delete(models.Firing{}, "ID = ?", firingID)
+	db.Delete(models.TemperatureReading{}, "firing_id = ?", firingID)
+	db.Delete(models.Photo{}, "firing_id = ?", firingID)
 }

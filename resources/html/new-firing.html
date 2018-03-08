@@ -11,9 +11,14 @@
                         <label class="mdl-textfield__label" for="description">Notes...</label>
                     </div>
                 </form>
-            <a class="mdl-button mdl-button--colored mdl-js-button mdl-js-ripple-effect" onclick="editform.submit();">
-            Save
+            <a class="mdl-button mdl-button--colored mdl-button--raised mdl-js-button mdl-js-ripple-effect " onclick="editform.submit();">
+                Save
             </a>
+
+            <a href="#" onclick="deleteFiring({{ .firing.ID }})" style="margin-left:100px;" class="mdl-button mdl-js-button mdl-js-ripple-effect mdl-button--accent">
+                Delete
+            </a>
+
         </div>
     </div>
 {{ end}}

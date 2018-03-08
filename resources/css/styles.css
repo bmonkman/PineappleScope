@@ -18,3 +18,7 @@ html, body {
         -ms-flex-positive: 1;
             flex-grow: 1;
   }
+
+.ps-header {
+    padding: 0 16px 0 0px;
+}

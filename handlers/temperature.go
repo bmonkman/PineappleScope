@@ -63,7 +63,7 @@ func getOrCreateFiring(db *gorm.DB) uint {
 
 	var firing models.Firing
 	if temperature.ID == 0 || temperature.FiringID == 0 {
-		firing = models.Firing{StartDate: time.Now(), EndDate: time.Now(), Name: "New Firing"}
+		firing = models.Firing{StartDate: time.Now(), EndDate: time.Now(), StartDateAmbientTemp: temperature.Outer, Name: "New Firing"}
 		db.Save(&firing)
 	} else {
 		db.First(&firing, temperature.FiringID)
