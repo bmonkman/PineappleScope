@@ -26,4 +26,49 @@ function deleteFiring(id) {
         actionText: 'Yes'
     };
     snackbarContainer.MaterialSnackbar.showSnackbar(data);
-};
+}
+
+
+
+function renderChart(data){
+    var ctx = document.getElementById("myChart").getContext('2d');
+
+    myChart = new Chart(ctx, {
+        type: 'line',
+        data: data,
+        options: {
+            tooltips: {
+                mode: 'nearest',
+                intersect: false
+            },
+            scales: {
+                xAxes: [{
+                    type: "time",
+                    time: {
+                        unit: 'minute',
+                        unitStepSize: 30,
+                        round: 'minute',
+                        tooltipFormat: "h:mm:ss a",
+                        displayFormats: {
+                        hour: 'MMM D, h:mm'
+                        }
+                    }
+                    }],
+                yAxes: [{
+                    id: 'A',
+                    type: 'linear',
+                    position: 'left',
+                    ticks: {
+                        beginAtZero:false
+                    }
+                }, {
+                    id: 'B',
+                    type: 'linear',
+                    position: 'right',
+                    display: false
+                }]
+            }
+
+        }
+    });
+}
