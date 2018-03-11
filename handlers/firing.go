@@ -25,7 +25,7 @@ func (f *FiringHandlers) Register() {
 	f.renderer.GET("/firing/:firingId", f.getFiring)
 	f.renderer.GET("/firing/:firingId/edit", f.showEditFiring)
 	f.renderer.POST("/firing/:firingId", f.editFiring)
-	f.renderer.GET("/firings", f.getFirings)
+	f.renderer.GET("/firings", f.listFirings)
 	f.renderer.GET("/firing/:firingId/readings", f.getReadingsForFiring)
 	f.renderer.DELETE("/firing/:firingId", f.deleteFiring)
 }
@@ -52,7 +52,7 @@ func (f *FiringHandlers) getFiring(c *gin.Context) {
 		}
 	}
 
-	c.HTML(http.StatusOK, "firing", gin.H{
+	Success(c, "firing", gin.H{
 		"title":               "Firing: " + firing.Name,
 		"firing":              firing,
 		"temperatureReadings": temperatureReadings,
@@ -75,7 +75,7 @@ func (f *FiringHandlers) showEditFiring(c *gin.Context) {
 	if firing.Name == "New Firing" {
 		firing.Name = ""
 	}
-	c.HTML(http.StatusOK, "new-firing", gin.H{
+	Success(c, "new-firing", gin.H{
 		"title":  "Edit Firing: " + firing.Name,
 		"firing": firing})
 }
@@ -105,11 +105,11 @@ func (f *FiringHandlers) editFiring(c *gin.Context) {
 	fmt.Println(firing)
 	db.Save(&firing)
 
-	c.Redirect(301, "/firing/"+firingID)
+	c.Redirect(http.StatusMovedPermanently, "/firing/"+firingID)
 }
 
 // List all firings
-func (f *FiringHandlers) getFirings(c *gin.Context) {
+func (f *FiringHandlers) listFirings(c *gin.Context) {
 	db, ok := c.MustGet("databaseConn").(*gorm.DB)
 	if !ok {
 		return
@@ -118,7 +118,7 @@ func (f *FiringHandlers) getFirings(c *gin.Context) {
 	var firings []models.Firing
 	db.Order("end_date DESC").Find(&firings)
 
-	c.HTML(http.StatusOK, "list", gin.H{
+	Success(c, "list", gin.H{
 		"title":                  "Firings",
 		"firings":                firings,
 		"currentFiringThreshold": time.Now().Add(-3 * time.Hour)})
@@ -137,7 +137,7 @@ func (f *FiringHandlers) getReadingsForFiring(c *gin.Context) {
 	var temperatureReadings []models.TemperatureReading
 	db.Where("firing_id = ?", firingID).Find(&temperatureReadings)
 
-	c.JSON(200, temperatureReadings)
+	c.JSON(http.StatusOK, temperatureReadings)
 
 }
 
@@ -153,4 +153,5 @@ func (f *FiringHandlers) deleteFiring(c *gin.Context) {
 	db.Delete(models.Firing{}, "ID = ?", firingID)
 	db.Delete(models.TemperatureReading{}, "firing_id = ?", firingID)
 	db.Delete(models.Photo{}, "firing_id = ?", firingID)
+	c.Status(http.StatusOK)
 }

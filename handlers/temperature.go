@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"fmt"
+	"net/http"
 	"strconv"
 	"time"
 
@@ -49,7 +50,7 @@ func createTemperatureReading(c *gin.Context) {
 	newReading := models.TemperatureReading{FiringID: firingID, Inner: innerTemperature, Outer: outerTemperature}
 	db.Save(&newReading)
 
-	c.Status(200)
+	c.Status(http.StatusOK)
 }
 
 // If there was a recent temperature reading, return that reading's session, otherwise create a new session

@@ -16,12 +16,22 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-const version = "0.0.3"
+const version = "0.0.4"
 
 // AddDbHandle middleware will add the db connection to the context
 func AddDbHandle(db *gorm.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Set("databaseConn", db)
+		c.Next()
+	}
+}
+
+// AddSharedVars middleware will add shared vars to all templates
+func AddSharedVars(vars map[string]string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		for k, v := range vars {
+			c.Set(k, v)
+		}
 		c.Next()
 	}
 }
@@ -53,6 +63,7 @@ func main() {
 
 	// Use middleware
 	r.Use(AddDbHandle(dbConnection))
+	r.Use(AddSharedVars(map[string]string{"version": version}))
 
 	// Use multitemplate rendering
 	r.HTMLRender = setupTemplates()
@@ -66,9 +77,6 @@ func main() {
 	// Index
 	r.GET("/", func(c *gin.Context) {
 		c.Redirect(301, "/firings")
-	})
-	r.GET("/new-firing", func(c *gin.Context) {
-		c.HTML(http.StatusOK, "new-firing", gin.H{"title": "New Firing"})
 	})
 	r.GET("/version", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"version": version})
