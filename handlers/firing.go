@@ -44,7 +44,7 @@ func (f *FiringHandlers) getFiring(c *gin.Context) {
 	db.First(&firing, firingID)
 
 	var temperatureReadings []models.TemperatureReading
-	db.Where("firing_id = ?", firingID).Find(&temperatureReadings)
+	db.Where("firing_id = ?", firingID).Order("created_date asc").Find(&temperatureReadings)
 
 	var peakTemperature = 0.0
 	for _, temp := range temperatureReadings {
@@ -138,9 +138,8 @@ func (f *FiringHandlers) getReadingsForFiring(c *gin.Context) {
 	if !ok {
 		return
 	}
-
 	var temperatureReadings []models.TemperatureReading
-	db.Where("firing_id = ?", firingID).Order("created_date").Find(&temperatureReadings)
+	db.Where("firing_id = ?", firingID).Order("created_date asc").Find(&temperatureReadings)
 
 	c.JSON(http.StatusOK, temperatureReadings)
 

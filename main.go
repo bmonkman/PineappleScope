@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"net/http"
 	"os"
 
@@ -61,6 +62,11 @@ func main() {
 
 	// Auto create these tables
 	dbConnection.AutoMigrate(&models.Firing{}, &models.TemperatureReading{}, &models.Photo{}, &models.Stats{})
+
+	if os.Getenv("DB_DEBUG") == "true" {
+		dbConnection.LogMode(true)
+		dbConnection.SetLogger(log.New(os.Stdout, "\r\n", 0))
+	}
 
 	// Use middleware
 	r.Use(AddDbHandle(dbConnection))
