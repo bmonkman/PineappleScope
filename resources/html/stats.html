@@ -1,0 +1,8 @@
+{{ define "content" }}
+    <table class="statsTable">
+        <tr><td>Date</td><td>Uptime</td><td>Free Memory</td></tr>
+        {{ range .stats }}
+            <tr><td>{{ .CreatedDate.Format "Mon, Jan _2 3:04:05PM" }}</td><td>{{ .Uptime }}</td><td>{{ .FreeMemory }}</td><td>{{ .Event }}</td></tr>
+        {{ end }}
+    </table>
+{{ end }}
