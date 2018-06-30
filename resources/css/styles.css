@@ -22,3 +22,7 @@ html, body {
 .ps-header {
     padding: 0 16px 0 0px;
 }
+
+table.statsTable  td {
+    padding-left: 10px;
+}

@@ -35,3 +35,11 @@ type Photo struct {
 	CreatedDate time.Time
 	photoURL    string
 }
+
+type Stats struct {
+	ID          uint
+	CreatedDate time.Time `gorm:"default:(datetime('now','localtime'))"`
+	Uptime      uint64
+	FreeMemory  uint64
+	Event       string
+}

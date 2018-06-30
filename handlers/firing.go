@@ -135,7 +135,7 @@ func (f *FiringHandlers) getReadingsForFiring(c *gin.Context) {
 	}
 
 	var temperatureReadings []models.TemperatureReading
-	db.Where("firing_id = ?", firingID).Find(&temperatureReadings)
+	db.Where("firing_id = ?", firingID).Order("created_date").Find(&temperatureReadings)
 
 	c.JSON(http.StatusOK, temperatureReadings)
 

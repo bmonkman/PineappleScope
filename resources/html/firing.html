@@ -36,7 +36,7 @@
     </div>
     <div class="mdl-button mdl-button--colored mdl-button--raised mdl-js-button mdl-js-ripple-effect" style="margin:5px;" onclick="document.getElementById('raw-data').style='display:;';">Raw Data</div>
     <div class="mdl-button mdl-button--colored mdl-button--raised mdl-js-button mdl-js-ripple-effect" style="margin:5px;" onclick="addOuterData();">Ambient Temperatures</div>
-    <table id="raw-data"style="display: none;">
+    <table id="raw-data" style="display: none;">
     {{ range .temperatureReadings }}
         <tr><td>{{ . }}</td></tr>
     {{ end }}

@@ -16,7 +16,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-const version = "0.0.4"
+const version = "0.0.5"
 
 // AddDbHandle middleware will add the db connection to the context
 func AddDbHandle(db *gorm.DB) gin.HandlerFunc {
@@ -41,6 +41,7 @@ func setupTemplates() multitemplate.Render {
 	r.AddFromFiles("list", "resources/html/base.html", "resources/html/list.html")
 	r.AddFromFiles("firing", "resources/html/base.html", "resources/html/firing.html")
 	r.AddFromFiles("new-firing", "resources/html/base.html", "resources/html/new-firing.html")
+	r.AddFromFiles("stats", "resources/html/base.html", "resources/html/stats.html")
 	return r
 }
 
@@ -59,7 +60,7 @@ func main() {
 	}
 
 	// Auto create these tables
-	dbConnection.AutoMigrate(&models.Firing{}, &models.TemperatureReading{}, &models.Photo{})
+	dbConnection.AutoMigrate(&models.Firing{}, &models.TemperatureReading{}, &models.Photo{}, &models.Stats{})
 
 	// Use middleware
 	r.Use(AddDbHandle(dbConnection))
@@ -84,6 +85,7 @@ func main() {
 
 	handlers.NewFiringHandlers(r).Register()
 	handlers.NewTemperatureHandlers(r).Register()
+	handlers.NewStatsHandlers(r).Register()
 
 	r.Run(":1111")
 	dbConnection.Close()
