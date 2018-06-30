@@ -5,28 +5,43 @@
         Edit
     </button>
 </a>
-    <div class="mdl-list" style="width:400px;">
-        <div class="mdl-list__item">
-            <span class="mdl-list__item-primary-content">Start/End Date:</span>
-            <span class="mdl-list__item-secondary-content">{{ .firing.StartDate.Format "Mon, Jan _2 3:04PM" }}<br/>{{ .firing.EndDate.Format "Mon, Jan _2 3:04PM" }}</span>
+    <div class="mdl-list" style="width:500px;">
+        <div style="display: inline-block; width:450px;">
+            <div class="mdl-list__item">
+                <span class="mdl-list__item-primary-content">Start/End Date:</span>
+                <span class="mdl-list__item-secondary-content">{{ .firing.StartDate.Format "Mon, Jan _2 3:04PM" }}<br/>{{ .firing.EndDate.Format "Mon, Jan _2 3:04PM" }}</span>
+            </div>
+            <div class="mdl-list__item">
+                <span class="mdl-list__item-primary-content">Starting ambient temp:</span>
+                <span class="mdl-list__item-secondary-content">{{ .firing.StartDateAmbientTemp }}˚C</span>
+            </div>
+            <div class="mdl-list__item">
+                <span class="mdl-list__item-primary-content">Peak temp:</span>
+                <span class="mdl-list__item-secondary-content">{{ .peakTemperature }}˚C</span>
+            </div>
+            <div class="mdl-list__item">
+                <span class="mdl-list__item-primary-content">Cone:</span>
+                <span class="mdl-list__item-secondary-content">{{ .firing.ConeNumber }}</span>
+            </div>
+            <div class="mdl-list__item">
+                <span class="mdl-list__item-primary-content">Notes:</span>
+                <span class="mdl-list__item-secondary-content">{{ .firing.Notes }}</span>
+            </div>
+
         </div>
-        <div class="mdl-list__item">
-            <span class="mdl-list__item-primary-content">Starting ambient temp:</span>
-            <span class="mdl-list__item-secondary-content">{{ .firing.StartDateAmbientTemp }}˚C</span>
-        </div>
-        <div class="mdl-list__item">
-            <span class="mdl-list__item-primary-content">Peak temp:</span>
-            <span class="mdl-list__item-secondary-content">{{ .peakTemperature }}˚C</span>
-        </div>
-        <div class="mdl-list__item">
-            <span class="mdl-list__item-primary-content">Cone:</span>
-            <span class="mdl-list__item-secondary-content">{{ .firing.ConeNumber }}</span>
-        </div>
-        <div class="mdl-list__item">
-            <span class="mdl-list__item-primary-content">Notes:</span>
-            <span class="mdl-list__item-secondary-content">{{ .firing.Notes }}</span>
+        <div style="display: inline-block; vertical-align: top;">
+            <button id="notificationSettings" class="mdl-button mdl-js-button mdl-button--icon">
+                <i class="material-icons">notifications</i>
+            </button>
+            <ul class="mdl-menu mdl-js-menu mdl-js-ripple-effect mdl-menu--bottom-left" for="notificationSettings">
+                {{ if gt .firing.LowNotificationTemp 0.0 }}<li class="mdl-menu__item">Low notification temp: {{ .firing.LowNotificationTemp }}{{ if .firing.LowNotificationSent }} <b>(sent)</b>{{ end }}</li>{{ end }}
+                {{ if gt .firing.HighNotificationTemp 0.0 }}<li class="mdl-menu__item">High notification temp: {{ .firing.HighNotificationTemp }}{{ if .firing.HighNotificationSent }} <b>(sent)</b>{{ end }}</li>{{ end }}
+            </ul>
         </div>
     </div>
+
+
+
 
     <div class="mdl-grid">
 

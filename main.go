@@ -16,7 +16,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-const version = "0.0.5"
+const version = "0.0.6"
 
 // AddDbHandle middleware will add the db connection to the context
 func AddDbHandle(db *gorm.DB) gin.HandlerFunc {

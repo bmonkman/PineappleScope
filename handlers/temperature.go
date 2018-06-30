@@ -2,7 +2,10 @@ package handlers
 
 import (
 	"fmt"
+	"io/ioutil"
 	"net/http"
+	"net/url"
+	"os"
 	"strconv"
 	"time"
 
@@ -12,6 +15,10 @@ import (
 )
 
 const newFiringThreshold = 3 // hour threshold for new measurements to be considered part of a firing
+// the temp must go past the low notification amount times this number before dropping back down
+const lowTempNotificationThresholdModifier = 1.1
+
+const iftttNotificationName = "kiln_temperature_reached"
 
 // TemperatureHandlers handles routing for temperature endpoints
 type TemperatureHandlers struct {
@@ -50,6 +57,8 @@ func createTemperatureReading(c *gin.Context) {
 	newReading := models.TemperatureReading{FiringID: firingID, Inner: innerTemperature, Outer: outerTemperature}
 	db.Save(&newReading)
 
+	handleNotifications(db, firingID, innerTemperature)
+
 	c.Status(http.StatusOK)
 }
 
@@ -74,4 +83,52 @@ func getOrCreateFiring(db *gorm.DB) uint {
 	}
 
 	return firing.ID
+}
+
+func handleNotifications(db *gorm.DB, firingID uint, temperature float64) {
+	firing := models.Firing{}
+	db.First(&firing, firingID)
+
+	if firing.HighNotificationTemp > 0 && temperature > firing.HighNotificationTemp && firing.HighNotificationSent == false {
+		sendNotification("🔥 high", firingID, temperature)
+		firing.HighNotificationSent = true
+		db.Save(&firing)
+	}
+
+	if firing.LowNotificationTemp > 0 && temperature < firing.LowNotificationTemp && firing.LowNotificationSent == false {
+		temperatureRecord := models.TemperatureReading{}
+
+		// Make sure the temperature has previously gone above the low notification threshold
+		whereString := fmt.Sprintf("firing_id = %d AND inner > %f", firingID, firing.LowNotificationTemp*lowTempNotificationThresholdModifier)
+		found := !db.Where(whereString).
+			Order("created_date desc").
+			First(&temperatureRecord).
+			RecordNotFound()
+
+		if found {
+			sendNotification("❄️ low", firingID, temperature)
+			firing.LowNotificationSent = true
+			db.Save(&firing)
+		}
+	}
+}
+
+func sendNotification(notificationType string, firingID uint, temperature float64) {
+	iftttURL := fmt.Sprintf("https://maker.ifttt.com/trigger/%s/with/key/%s", iftttNotificationName, os.Getenv("IFTTT_KEY"))
+	values := url.Values{
+		"value1": {notificationType},
+		"value2": {strconv.FormatFloat(temperature, 'f', 2, 64)},
+		"value3": {strconv.FormatUint(uint64(firingID), 10)},
+	}
+	resp, err := http.PostForm(iftttURL, values)
+	if err != nil {
+		fmt.Println("Failed to send notification due to error: ", err)
+	}
+	if resp.StatusCode != http.StatusOK {
+		fmt.Println("Failed to send notification, status code: ", resp.StatusCode)
+		defer resp.Body.Close()
+		body, _ := ioutil.ReadAll(resp.Body)
+		fmt.Println(string(body))
+
+	}
 }

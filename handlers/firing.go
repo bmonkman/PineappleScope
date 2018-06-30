@@ -3,6 +3,7 @@ package handlers
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/bmonkman/PineappleScope/models"
@@ -86,6 +87,8 @@ func (f *FiringHandlers) editFiring(c *gin.Context) {
 	name := c.PostForm("name")
 	coneNumber := c.PostForm("coneNumber")
 	notes := c.PostForm("notes")
+	lowNotificationTemp, _ := strconv.ParseFloat(c.PostForm("lowNotificationTemp"), 64)
+	highNotificationTemp, _ := strconv.ParseFloat(c.PostForm("highNotificationTemp"), 64)
 
 	db, ok := c.MustGet("databaseConn").(*gorm.DB)
 	if !ok {
@@ -102,6 +105,8 @@ func (f *FiringHandlers) editFiring(c *gin.Context) {
 	firing.Name = name
 	firing.Notes = notes
 	firing.ConeNumber = coneNumber
+	firing.HighNotificationTemp = highNotificationTemp
+	firing.LowNotificationTemp = lowNotificationTemp
 	fmt.Println(firing)
 	db.Save(&firing)
 

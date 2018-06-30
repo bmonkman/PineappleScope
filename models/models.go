@@ -13,6 +13,11 @@ type Firing struct {
 	Name                 string
 	Notes                string
 
+	HighNotificationTemp float64
+	LowNotificationTemp  float64 `gorm:"default:100.0"`
+	HighNotificationSent bool    `gorm:"default:false"`
+	LowNotificationSent  bool    `gorm:"default:false"`
+
 	TemperatureReadings []TemperatureReading
 	Photos              []Photo
 }

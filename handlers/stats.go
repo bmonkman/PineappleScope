@@ -61,7 +61,7 @@ func (h *StatsHandlers) getStats(c *gin.Context) {
 	}
 
 	var stats []models.Stats
-	db.Limit(50).Find(&stats)
+	db.Limit(200).Find(&stats)
 
 	Success(c, "stats", gin.H{
 		"title": "Stats",
