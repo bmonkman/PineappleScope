@@ -15,8 +15,8 @@ type Firing struct {
 
 	HighNotificationTemp float64
 	LowNotificationTemp  float64 `gorm:"default:100.0"`
-	HighNotificationSent bool    `gorm:"default:false"`
-	LowNotificationSent  bool    `gorm:"default:false"`
+	HighNotificationSent bool    `gorm:"default:0"`
+	LowNotificationSent  bool    `gorm:"default:0"`
 
 	TemperatureReadings []TemperatureReading
 	Photos              []Photo
@@ -46,5 +46,5 @@ type Stats struct {
 	CreatedDate time.Time `gorm:"default:(datetime('now','localtime'))"`
 	Uptime      uint64
 	FreeMemory  uint64
-	Event       string
+	WifiSignal  int
 }

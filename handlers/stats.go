@@ -34,19 +34,22 @@ func (h *StatsHandlers) createStatsRecord(c *gin.Context) {
 		panic(err)
 	}
 
-	uptime, err := strconv.ParseUint(c.PostForm("uptime"), 10, 64)
+	wifiSignal, err := strconv.ParseInt(c.PostForm("wifiSignal"), 10, 32)
 	if err != nil {
 		panic(err)
 	}
 
-	event := c.PostForm("event")
+	uptime, err := strconv.ParseUint(c.PostForm("uptime"), 10, 64)
+	if err != nil {
+		panic(err)
+	}
 
 	db, ok := c.MustGet("databaseConn").(*gorm.DB)
 	if !ok {
 		return
 	}
 
-	newStats := models.Stats{FreeMemory: freeMemory, Uptime: uptime, Event: event}
+	newStats := models.Stats{FreeMemory: freeMemory, Uptime: uptime, WifiSignal: int(wifiSignal)}
 	fmt.Println(newStats)
 	db.Save(&newStats)
 
@@ -61,7 +64,7 @@ func (h *StatsHandlers) getStats(c *gin.Context) {
 	}
 
 	var stats []models.Stats
-	db.Limit(200).Find(&stats)
+	db.Limit(60 * 5).Order("created_date desc").Find(&stats)
 
 	Success(c, "stats", gin.H{
 		"title": "Stats",

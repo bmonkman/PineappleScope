@@ -1,27 +1,38 @@
-
+#include <SoftTimer.h> // Remove Rotary and Debouncer classes, as they have another dependency
 #include <SPI.h>
 #include <WiFi101.h>
 #include <Adafruit_MAX31856.h>
-#include "secrets.h"
-
-int keyIndex = 0; // network key Index number (needed only for WEP)
+#include "secrets.h" // char ssid[], char pass[]
 
 IPAddress server(192,168,86,142);
 //IPAddress server(192,168,86,250);
 //char server[] = "192.168.86.250";
 int port = 1111;
+int resetPort = 1112;
+
+int resetPin = 2;
 
 float reportTemperatureThreshold = 40.0; // Degrees C before active monitoring kicks in
 unsigned long reportingDelay = 10 * 60 * 1000L; // Milliseconds between reporting
+unsigned long statsDelay = 60 * 1000L; // Milliseconds between stats
+unsigned long resetDelay = 60 * 60 * 1000L; // Milliseconds between hardware resets (if port is open)
 
-
-// Initialize the Ethernet client library
-WiFiClient client;
 
 // Init thermocouple with custom pins
 Adafruit_MAX31856 max = Adafruit_MAX31856(5, 6, 9, 10);
 
+void reportTemperature(Task* me);
+void reportStats(Task* me);
+void reset(Task* me);
+
+// Initialize the Ethernet client library
+WiFiClient client;
+
+
 void setup() {
+  digitalWrite(resetPin, HIGH);
+  pinMode(resetPin, OUTPUT);
+
   pinMode(LED_BUILTIN, OUTPUT);
   digitalWrite(LED_BUILTIN, LOW);
     //Configure pins for Adafruit ATWINC1500 Breakout
@@ -44,56 +55,98 @@ void setup() {
 
   wifiConnect();
   digitalWrite(LED_BUILTIN, HIGH);
+
+  Task tempTask(reportingDelay, reportTemperature);
+  Task statsTask(statsDelay, reportStats);
+  Task resetTask(resetDelay, reset);
+
+  SoftTimer.add(&tempTask);
+  SoftTimer.add(&statsTask);
+  SoftTimer.add(&resetTask);
 }
 
-float temperature;
-long currentMillis = reportingDelay*-1;
-void loop() {
-  Serial.print(millis()); Serial.print(" > "); Serial.println(currentMillis + reportingDelay);
-  if (millis() > currentMillis + reportingDelay)
-  {
-    currentMillis = millis();
-    temperature = max.readThermocoupleTemperature();
-    Serial.print("Thermocouple Temp: "); Serial.println(temperature);
-    if (temperature > reportTemperatureThreshold) {
-      Serial.println("\nTemperature above threshold, starting connection to server... ");
-  
-      // Reconnect wifi if necessary
-      if(WiFi.status() != WL_CONNECTED) {
-          wifiConnect();
-      }
+
+void reportTemperature(Task* me) {
+  float temperature;
+  Serial.print(millis());
+
+  temperature = max.readThermocoupleTemperature();
+  Serial.print("Thermocouple Temp: "); Serial.println(temperature);
+  if (temperature > reportTemperatureThreshold) {
+    Serial.println("\nTemperature above threshold, starting connection to server... ");
+
+    // Reconnect wifi if necessary
+    if(WiFi.status() != WL_CONNECTED) {
+        wifiConnect();
+    }
+
+    client.stop();
+    if (client.connect(server, port)) {
+      Serial.println("connected to server");
+
+
+      char postData[32];
+      char innerString[7];
+      char outerString[7];
+      dtostrf(temperature, 4, 2, innerString);
+      dtostrf(max.readCJTemperature(), 4, 2, outerString);
+      sprintf(postData, "inner=%s&outer=%s", innerString, outerString);
       
+      client.println("POST /temperature HTTP/1.1");
+      client.println("Connection: close");
+      client.println("Content-Type: application/x-www-form-urlencoded");
+      client.print("Content-Length: ");
+      client.println(strlen(postData));
+      client.println("Host: pineapplescope");
+      client.println();
+      client.print(postData);
+      client.println();
       client.stop();
-      if (client.connect(server, port)) {
-        Serial.println("connected to server");
-  
-  
-        char postData[32];
-        char innerString[7];
-        char outerString[7];
-        dtostrf(temperature, 4, 2, innerString);
-        dtostrf(max.readCJTemperature(), 4, 2, outerString);
-        sprintf(postData, "inner=%s&outer=%s", innerString, outerString);
-        
-        client.println("POST /temperature HTTP/1.1");
-        client.println("Connection: close");
-        client.println("Content-Type: application/x-www-form-urlencoded");
-        client.print("Content-Length: ");
-        client.println(strlen(postData));
-        client.println("Host: pineapplescope");
-        client.println();
-        client.print(postData);
-        client.println();
-        client.stop();
-        Serial.println("Sent data");
-  
-      }
+      Serial.println("Sent data");
+
     }
   }
-  delay(1000);
-  digitalWrite(LED_BUILTIN, HIGH);
-  delay(1000);
-  digitalWrite(LED_BUILTIN, LOW);
+}
+
+void reportStats(Task* me) {
+  // Reconnect wifi if necessary
+  if(WiFi.status() != WL_CONNECTED) {
+      wifiConnect();
+  }
+
+  client.stop();
+  if (client.connect(server, port)) {
+    Serial.println("connected to server");
+
+    char postData[64];
+    sprintf(postData, "uptime=%lu&freeMemory=%d&wifiSignal=%d", millis(), freeMemory(), WiFi.RSSI());
+    Serial.println(postData);
+    client.println("POST /stats HTTP/1.1");
+    client.println("Connection: close");
+    client.println("Content-Type: application/x-www-form-urlencoded");
+    client.print("Content-Length: ");
+    client.println(strlen(postData));
+    client.println("Host: pineapplescope");
+    client.println();
+    client.print(postData);
+    client.println();
+    client.stop();
+    Serial.println("Sent data");
+
+  }
+}
+
+void reset(Task* me) {
+    // Reconnect wifi if necessary
+  if(WiFi.status() != WL_CONNECTED) {
+      wifiConnect();
+  }
+
+  client.stop();
+  // If we can connect on the specified port, reset the hardware
+  if (client.connect(server, resetPort)) {
+    digitalWrite(resetPin, LOW);
+  }
 }
 
 void wifiConnect() {
@@ -133,6 +186,25 @@ void printWiFiStatus() {
 }
 
 
+
+
+#ifdef __arm__
+// should use uinstd.h to define sbrk but Due causes a conflict
+extern "C" char* sbrk(int incr);
+#else  // __ARM__
+extern char *__brkval;
+#endif  // __arm__
+
+int freeMemory() {
+  char top;
+#ifdef __arm__
+  return &top - reinterpret_cast<char*>(sbrk(0));
+#elif defined(CORE_TEENSY) || (ARDUINO > 103 && ARDUINO != 151)
+  return &top - __brkval;
+#else  // __arm__
+  return __brkval ? &top - __brkval : &top - __malloc_heap_start;
+#endif  // __arm__
+}
 
 
 

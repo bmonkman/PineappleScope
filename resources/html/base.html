@@ -37,7 +37,11 @@
                 <button id="hdrbtn" class="mdl-button mdl-js-button mdl-button--icon">
                     <i class="material-icons">more_vert</i>
                 </button>
-
+                {{ if eq .deviceCheckedIn "0"}}
+                <button class="mdl-button mdl-js-button mdl-button--icon">
+                        <a class="mdl-navigation__link" href="/stats"><i class="material-icons">error</i></a>
+                </button>
+                {{ end }}
                 <ul class="mdl-menu mdl-js-menu mdl-js-ripple-effect mdl-menu--bottom-right" for="hdrbtn">
                     <li class="mdl-menu__item"><a class="mdl-navigation__link" href="/stats">Stats</a></li>
                 </ul>

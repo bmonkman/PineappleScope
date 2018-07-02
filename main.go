@@ -17,7 +17,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-const version = "0.0.6"
+const version = "0.0.7"
 
 // AddDbHandle middleware will add the db connection to the context
 func AddDbHandle(db *gorm.DB) gin.HandlerFunc {
@@ -28,11 +28,16 @@ func AddDbHandle(db *gorm.DB) gin.HandlerFunc {
 }
 
 // AddSharedVars middleware will add shared vars to all templates
-func AddSharedVars(vars map[string]string) gin.HandlerFunc {
+func AddSharedVars(vars map[string]string, funcs map[string]func(*gin.Context) string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		for k, v := range vars {
 			c.Set(k, v)
 		}
+
+		for k, f := range funcs {
+			c.Set(k, f(c))
+		}
+
 		c.Next()
 	}
 }
@@ -64,13 +69,15 @@ func main() {
 	dbConnection.AutoMigrate(&models.Firing{}, &models.TemperatureReading{}, &models.Photo{}, &models.Stats{})
 
 	if os.Getenv("DB_DEBUG") == "true" {
-		dbConnection.LogMode(true)
-		dbConnection.SetLogger(log.New(os.Stdout, "\r\n", 0))
+	dbConnection.LogMode(true)
+	dbConnection.SetLogger(log.New(os.Stdout, "\r\n", 0))
 	}
 
 	// Use middleware
 	r.Use(AddDbHandle(dbConnection))
-	r.Use(AddSharedVars(map[string]string{"version": version}))
+	sharedVars := map[string]string{"version": version}
+	sharedFuncs := map[string]func(*gin.Context) string{"deviceCheckedIn": getDeviceCheckedInState}
+	r.Use(AddSharedVars(sharedVars, sharedFuncs))
 
 	// Use multitemplate rendering
 	r.HTMLRender = setupTemplates()
@@ -95,4 +102,16 @@ func main() {
 
 	r.Run(":1111")
 	dbConnection.Close()
+}
+
+func getDeviceCheckedInState(c *gin.Context) string {
+	db, _ := c.MustGet("databaseConn").(*gorm.DB)
+	statsRecord := models.Stats{}
+	notFound := db.Where("created_date >= datetime('now', 'localtime', '-2 minutes')").
+		First(&statsRecord).
+		RecordNotFound()
+	if notFound {
+		return "0"
+	}
+	return "1"
 }
