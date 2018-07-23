@@ -30,11 +30,9 @@ WiFiClient client;
 
 
 void setup() {
-  digitalWrite(resetPin, HIGH);
-  pinMode(resetPin, OUTPUT);
+//  digitalWrite(resetPin, HIGH);
+//  pinMode(resetPin, OUTPUT);
 
-  pinMode(LED_BUILTIN, OUTPUT);
-  digitalWrite(LED_BUILTIN, LOW);
     //Configure pins for Adafruit ATWINC1500 Breakout
   WiFi.setPins(8,7,4);
   //Initialize serial and wait for port to open:
@@ -54,7 +52,6 @@ void setup() {
   }
 
   wifiConnect();
-  digitalWrite(LED_BUILTIN, HIGH);
 
   Task tempTask(reportingDelay, reportTemperature);
   Task statsTask(statsDelay, reportStats);
@@ -71,7 +68,7 @@ void reportTemperature(Task* me) {
   Serial.print(millis());
 
   temperature = max.readThermocoupleTemperature();
-  Serial.print("Thermocouple Temp: "); Serial.println(temperature);
+  Serial.print("Thermocouple Temp (report): "); Serial.println(temperature);
   if (temperature > reportTemperatureThreshold) {
     Serial.println("\nTemperature above threshold, starting connection to server... ");
 
@@ -118,8 +115,12 @@ void reportStats(Task* me) {
   if (client.connect(server, port)) {
     Serial.println("connected to server");
 
-    char postData[64];
-    sprintf(postData, "uptime=%lu&freeMemory=%d&wifiSignal=%d", millis(), freeMemory(), WiFi.RSSI());
+
+    char tempString[7];
+    dtostrf(max.readThermocoupleTemperature(), 4, 2, tempString);
+
+    char postData[70];
+    sprintf(postData, "temp=%s&uptime=%lu&freeMemory=%d&wifiSignal=%d", tempString, millis(), freeMemory(), WiFi.RSSI());
     Serial.println(postData);
     client.println("POST /stats HTTP/1.1");
     client.println("Connection: close");
@@ -132,7 +133,6 @@ void reportStats(Task* me) {
     client.println();
     client.stop();
     Serial.println("Sent data");
-
   }
 }
 
@@ -160,6 +160,8 @@ void wifiConnect() {
     Serial.println(ssid);
     // Connect to WPA/WPA2 network. Change this line if using open or WEP network:
     status = WiFi.begin(ssid, pass);
+    Serial.println(status);
+    Serial.println(WL_CONNECTED);
 
     // wait 10 seconds for connection:
     delay(10000);

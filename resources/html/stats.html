@@ -1,8 +1,24 @@
 {{ define "content" }}
     <table class="statsTable">
-        <tr><td>Date</td><td>Uptime</td><td>Free Memory</td></tr>
+        <tr>
+            <td>Date</td>
+            <td>Kiln Temp</td>
+            <td>Ambient Temp</td>
+            <td>Humidity</td>
+            <td>CPU Temp</td>
+            <td>Uptime</td>
+            <td>Free Memory</td>
+        </tr>
         {{ range .stats }}
-            <tr><td>{{ .CreatedDate.Format "Mon, Jan _2 3:04:05PM" }}</td><td>{{ .Uptime }}</td><td>{{ .FreeMemory }}</td><td>{{ .WifiSignal }}</td></tr>
+            <tr>
+                <td>{{ .CreatedDate.Format "Mon, Jan _2 3:04:05PM" }}</td>
+                <td>{{ .Temperature }}˚</td>
+                <td>{{ .AmbientTemperature }}˚</td>
+                <td>{{ .Humidity }}%</td>
+                <td>{{ .CPUTemperature }}˚</td>
+                <td>{{ .Uptime }}</td>
+                <td>{{ .FreeMemory }}</td>
+            </tr>
         {{ end }}
     </table>
 {{ end }}

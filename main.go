@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 
 	"github.com/bmonkman/PineappleScope/handlers"
 	"github.com/bmonkman/PineappleScope/models"
@@ -17,7 +18,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-const version = "0.0.7"
+const version = "0.1.0"
 
 // AddDbHandle middleware will add the db connection to the context
 func AddDbHandle(db *gorm.DB) gin.HandlerFunc {
@@ -69,14 +70,17 @@ func main() {
 	dbConnection.AutoMigrate(&models.Firing{}, &models.TemperatureReading{}, &models.Photo{}, &models.Stats{})
 
 	if os.Getenv("DB_DEBUG") == "true" {
-	dbConnection.LogMode(true)
-	dbConnection.SetLogger(log.New(os.Stdout, "\r\n", 0))
+		dbConnection.LogMode(true)
+		dbConnection.SetLogger(log.New(os.Stdout, "\r\n", 0))
 	}
 
 	// Use middleware
 	r.Use(AddDbHandle(dbConnection))
 	sharedVars := map[string]string{"version": version}
-	sharedFuncs := map[string]func(*gin.Context) string{"deviceCheckedIn": getDeviceCheckedInState}
+	sharedFuncs := map[string]func(*gin.Context) string{
+		"deviceCheckedIn": getDeviceCheckedInState,
+		"currentTemp":     getCurrentTemp}
+
 	r.Use(AddSharedVars(sharedVars, sharedFuncs))
 
 	// Use multitemplate rendering
@@ -114,4 +118,16 @@ func getDeviceCheckedInState(c *gin.Context) string {
 		return "0"
 	}
 	return "1"
+}
+
+func getCurrentTemp(c *gin.Context) string {
+	db, _ := c.MustGet("databaseConn").(*gorm.DB)
+	statsRecord := models.Stats{}
+	notFound := db.Order("created_date desc").
+		First(&statsRecord).
+		RecordNotFound()
+	if notFound {
+		return "0"
+	}
+	return strconv.FormatFloat(statsRecord.Temperature, 'f', 2, 64)
 }

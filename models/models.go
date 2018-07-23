@@ -42,9 +42,12 @@ type Photo struct {
 }
 
 type Stats struct {
-	ID          uint
-	CreatedDate time.Time `gorm:"default:(datetime('now','localtime'))"`
-	Uptime      uint64
-	FreeMemory  uint64
-	WifiSignal  int
+	ID                 uint
+	CreatedDate        time.Time `gorm:"default:(datetime('now','localtime'))"`
+	Uptime             uint64
+	FreeMemory         uint64
+	Temperature        float64
+	AmbientTemperature float64
+	CPUTemperature     float64
+	Humidity           float64
 }
