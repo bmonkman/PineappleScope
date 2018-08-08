@@ -7,25 +7,30 @@ import requests
 import Adafruit_GPIO
 import Adafruit_DHT
 # import Adafruit_MAX31856
-from Adafruit_MAX31856 import MAX31856 as MAX31856
+# from Adafruit_MAX31856 import MAX31856 as MAX31856
+from MAX31856 import max31856
 from threading import Thread, Event
 
 logging.basicConfig(filename='pineapplescope.log', level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 _logger = logging.getLogger(__name__)
 
-serverIP = '192.168.86.142'
+serverIP = '192.168.86.142:1111'
 # serverIP = '192.168.86.250:1111'
+
 reportTemperatureThreshold = 40.0
 reportingInterval = 10 * 60
 statsInterval = 60
+thermocoupleTemperatureModifier = 1.0
+# 1.02 at 962 (962 TC vs 978 kiln)
 
-# AM2032 config
+# AM2302 config
 sensorType = Adafruit_DHT.AM2302
-pin = 16
+pin = 14
 
 # MAX31856 config
-software_spi = {"clk": 26, "cs": 6, "do": 19, "di": 13}
-sensor = MAX31856(software_spi=software_spi)
+# software_spi = {"clk": 17, "do": 4, "di": 3, "cs": 2}
+# max = MAX31856(software_spi=software_spi)
+max = max31856.max31856(2,4,3,17)
 
 startTime = time.time()
 
@@ -40,13 +45,20 @@ class ReportTemperature(Thread):
             self.check()
 
     def check(self):
-        innerTemp = sensor.read_temp_c()
+        try:
+            # innerTemp = max.read_temp_c()
+            innerTemp = max.readThermocoupleTemp()*thermocoupleTemperatureModifier
+        except FaultError as e:
+            print("Exception:")
+            print(e)
+            return
 
         if innerTemp > reportTemperatureThreshold:
-            ambientTemp = None
-            # Log if this happens too many times?
-            while ambientTemp is None:
-                humidity, ambientTemp = Adafruit_DHT.read_retry(sensorType, pin)
+            humidity, ambientTemp = Adafruit_DHT.read_retry(sensorType, pin, 5, 2)
+
+            if ambientTemp is None:
+                ambientTemp = 0.0
+                print("Couldn't read ambientTemp for ReportTemperature")
 
             data = {'inner': "{:.2f}".format(innerTemp), 'outer': "{:.2f}".format(ambientTemp)}
             print(data)
@@ -68,19 +80,30 @@ class ReportStats(Thread):
             self.check()
 
     def check(self):
-            innerTemp = sensor.read_temp_c()
+        try:
+            # innerTemp = max.read_temp_c()
+            innerTemp = max.readThermocoupleTemp()*thermocoupleTemperatureModifier
+        except FaultError as e:
+            print("Exception:")
+            print(e)
+            return
 
-            ambientTemp = humidity = None
-            # Log if this happens too many times?
-            while ambientTemp is None or humidity is None:
-                humidity, ambientTemp = Adafruit_DHT.read_retry(sensorType, pin)
+        humidity, ambientTemp = Adafruit_DHT.read_retry(sensorType, pin, 5, 2)
 
-            data = {'temp': "{:.2f}".format(innerTemp), 'cpuTemp': getCPUtemperature(), 'freeMemory': getFreeRAM(), 'uptime': int(time.time()-startTime), 'ambientTemp': "{:.2f}".format(ambientTemp), 'humidity': "{:.2f}".format(humidity)}
-            print(data)
-            r = requests.post("http://{0}/stats".format(serverIP), data)
-            if r.status_code is not 200:
-                print("Request failed: ")
-                print(r)
+        if humidity is None:
+            humidity = 0.0
+            print("Couldn't read humidity for ReportStats")
+
+        if ambientTemp is None:
+            ambientTemp = 0.0
+            print("Couldn't read ambientTemp for ReportStats")
+
+        data = {'temp': "{:.2f}".format(innerTemp), 'cpuTemp': getCPUtemperature(), 'freeMemory': getFreeRAM(), 'uptime': int(time.time()-startTime), 'ambientTemp': "{:.2f}".format(ambientTemp), 'humidity': "{:.2f}".format(humidity)}
+        print(data)
+        r = requests.post("http://{0}/stats".format(serverIP), data)
+        if r.status_code is not 200:
+            print("Request failed: ")
+            print(r)
 
 
 
