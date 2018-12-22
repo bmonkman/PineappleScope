@@ -62,11 +62,15 @@ class ReportTemperature(Thread):
 
             data = {'inner': "{:.2f}".format(innerTemp), 'outer': "{:.2f}".format(ambientTemp)}
             print(data)
-            r = requests.post("http://{0}/temperature".format(serverIP), data)
-            if r.status_code is not 200:
-                print("Request failed: ")
-                print(r)
 
+            try:
+                r = requests.post("http://{0}/temperature".format(serverIP), data)
+                if r.status_code is not 200:
+                    print("Request failed: ")
+                    print(r)
+            except requests.exceptions.RequestException as e:
+                print("Request failed: ")
+                print(e)
 
 
 class ReportStats(Thread):
@@ -100,10 +104,15 @@ class ReportStats(Thread):
 
         data = {'temp': "{:.2f}".format(innerTemp), 'cpuTemp': getCPUtemperature(), 'freeMemory': getFreeRAM(), 'uptime': int(time.time()-startTime), 'ambientTemp': "{:.2f}".format(ambientTemp), 'humidity': "{:.2f}".format(humidity)}
         print(data)
-        r = requests.post("http://{0}/stats".format(serverIP), data)
-        if r.status_code is not 200:
-            print("Request failed: ")
-            print(r)
+
+        try:
+            r = requests.post("http://{0}/stats".format(serverIP), data)
+            if r.status_code is not 200:
+                print("Stats Request failed: ")
+                print(r)
+        except requests.exceptions.RequestException as e:
+            print("Stats Request failed: ")
+            print(e)
 
 
 
