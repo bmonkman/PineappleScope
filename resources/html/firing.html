@@ -1,10 +1,5 @@
 
 {{ define "content" }}
-<a href="/firing/{{ .firing.ID }}/edit" id="add-firing">
-    <button class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-button--accent">
-        Edit
-    </button>
-</a>
     <div class="mdl-list" style="width:400px;">
         <div style="display: inline-block; width:360px;">
             <div class="mdl-list__item">
@@ -52,7 +47,12 @@
         </div>
     </div>
     <div class="mdl-button mdl-button--colored mdl-button--raised mdl-js-button mdl-js-ripple-effect" style="margin:5px;" onclick="document.getElementById('raw-data').style='display:;';">Raw Data</div>
-    <div class="mdl-button mdl-button--colored mdl-button--raised mdl-js-button mdl-js-ripple-effect" style="margin:5px;" onclick="addOuterData();">Ambient Temperatures</div>
+    <div class="mdl-button mdl-button--colored mdl-button--raised mdl-js-button mdl-js-ripple-effect" style="margin:5px;" onclick="addOuterData();">Ambient Temp</div>
+    <a href="/firing/{{ .firing.ID }}/edit" id="add-firing">
+        <button class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-button--accent">
+            Edit
+        </button>
+    </a>
     <table id="raw-data" style="display: none;">
     {{ range .temperatureReadings }}
         <tr><td>{{ . }}</td></tr>
@@ -71,7 +71,8 @@
                     data: [{{ range .temperatureReadings }}{{ .Inner }},{{ end }}],
                     borderColor: '#fe8b36',
                     backgroundColor: '#fe8b36',
-                    lineTension: 0.1
+                    lineTension: 0.1,
+                    yAxisID: 'inner'
                 }]
             };
 
@@ -85,7 +86,7 @@
                     borderColor: '#fe8b36',
                     backgroundColor: '#fe8b36',
                     lineTension: 0.1,
-                    yAxisID: 'A'
+                    yAxisID: 'inner'
                 },
                 {
                     fill: false,
@@ -94,18 +95,18 @@
                     borderColor: '#4caf50',
                     backgroundColor: '#4caf50',
                     lineTension: 0.1,
-                    yAxisID: 'B'
+                    yAxisID: 'outer'
                 }]
             };
 
         function addOuterData() {
-            if (myChart.options.scales.yAxes[1].display == false) {
+            if (myChart.options.scales.outer.display == false) {
                 myChart.data = allData
             } else {
                 myChart.data = innerOnlyData
             }
 
-            myChart.options.scales.yAxes[1].display=!myChart.options.scales.yAxes[1].display;
+            myChart.options.scales.outer.display=!myChart.options.scales.outer.display;
 
             myChart.update();
         }

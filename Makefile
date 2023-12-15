@@ -1,8 +1,8 @@
 run:
-	go run main.go
+	go run cmd/pineapplescope/main.go
 
 build: 
-	go build
+	go build ./cmd/pineapplescope
 
 container:
 	# Wanted to do this when using the super light scratch container but had to do some other stuff in the container so had to drop it

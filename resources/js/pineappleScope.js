@@ -37,12 +37,14 @@ function renderChart(data){
         type: 'line',
         data: data,
         options: {
+            responsive: true,
+            maintainAspectRatio: false,
             tooltips: {
                 mode: 'nearest',
                 intersect: false
             },
             scales: {
-                xAxes: [{
+                x: {
                     type: "time",
                     time: {
                         unit: 'minute',
@@ -53,22 +55,39 @@ function renderChart(data){
                         hour: 'MMM D, h:mm'
                         }
                     }
-                    }],
-                yAxes: [{
-                    id: 'A',
+                },
+                inner: {
                     type: 'linear',
                     position: 'left',
-                    ticks: {
-                        beginAtZero:false
-                    }
-                }, {
-                    id: 'B',
+                    beginAtZero:false
+                },
+                outer: {
                     type: 'linear',
                     position: 'right',
-                    display: false
-                }]
+                    display: false,
+                    beginAtZero:false
+                }
+            },
+            plugins: {
+                zoom: {
+                  zoom: {
+                    wheel: {
+                      enabled: true,
+                    },
+                    pinch: {
+                      enabled: true
+                    },
+                    mode: 'x',
+                  },
+                  pan: {
+                    enabled: true,
+                    mode: 'x',
+                  },
+                  limits: {
+                    x: {max: 'original', min: 'original'},
+                  },
+                }
             }
-
         }
     });
 }

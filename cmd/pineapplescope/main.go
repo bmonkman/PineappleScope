@@ -55,6 +55,7 @@ func setupTemplates() multitemplate.Render {
 func main() {
 	gin.SetMode(gin.DebugMode)
 	r := gin.Default()
+	// r.SetTrustedProxies([]string{})
 
 	dbFile := os.Getenv("DBFILE")
 	if len(dbFile) == 0 {

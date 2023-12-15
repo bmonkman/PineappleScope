@@ -19,8 +19,9 @@ PineappleScope.code-workspace
 
 arduino/ReportThermoTemperature/secrets.h
 
-main
-PineappleScope
-PineappleScope-linux-amd64
+/main
+/pineapplescope
+/PineappleScope
+/PineappleScope-linux-amd64
 
-pineapplescope.db
+/pineapplescope.db
