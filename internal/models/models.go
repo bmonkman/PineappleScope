@@ -43,7 +43,7 @@ type Photo struct {
 
 type Stats struct {
 	ID                 uint
-	CreatedDate        time.Time `gorm:"default:(datetime('now','localtime'))"`
+	CreatedDate        time.Time `gorm:"default:(datetime('now','localtime'));index"`
 	Uptime             uint64
 	FreeMemory         uint64
 	Temperature        float64

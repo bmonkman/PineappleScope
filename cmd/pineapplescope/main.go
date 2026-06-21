@@ -108,6 +108,9 @@ func main() {
 	handlers.NewTemperatureHandlers(r).Register()
 	handlers.NewStatsHandlers(r).Register()
 
+	// Periodically prune old device stats so the table stays bounded.
+	handlers.StartStatsCleanup(dbConnection)
+
 	r.Run(":1111")
 	dbConnection.Close()
 }
