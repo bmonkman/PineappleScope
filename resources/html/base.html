@@ -13,13 +13,13 @@
         <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1"></script>
 
         <link rel="icon" sizes="192x192" href="/images/android-desktop.png">
-        <link rel="stylesheet" href="/css/styles.css">
+        <link rel="stylesheet" href="/css/styles.css?v{{ .version }}">
         <link rel="icon" href="/favicon.ico" type="image/x-icon">
         <title>PineappleScope</title>
     </head>
 
     <body>
-        <header class="app-header">
+        <header class="app-header" data-temp="{{ .currentTemp }}">
             <a href="/" title="Home" aria-label="Home">
                 <svg class="icon" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
             </a>
@@ -33,6 +33,7 @@
             {{ end }}
             <a class="app-header__link" href="/stats">Stats</a>
         </header>
+        <script>applyHeaderTemp();</script>
 
         <main class="container">
             {{ template "content" . }}

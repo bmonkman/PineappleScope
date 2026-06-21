@@ -10,7 +10,9 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . .
-RUN CGO_ENABLED=1 GOOS=linux go build -o /out/pineapplescope ./cmd/pineapplescope
+# VERSION (e.g. the git SHA) is baked in so asset URLs bust caches per build.
+ARG VERSION=dev
+RUN CGO_ENABLED=1 GOOS=linux go build -ldflags "-X main.version=${VERSION}" -o /out/pineapplescope ./cmd/pineapplescope
 
 # Runtime stage: slim image with just the binary, templates/assets, and certs.
 FROM debian:bookworm-slim

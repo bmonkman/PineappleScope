@@ -1,3 +1,22 @@
+// Tint the header from cold (dark blue) to hot (orange) based on kiln temp.
+// Interpolates in HSL so the hue sweeps the warm way: blue -> purple -> red -> orange.
+function tempToColor(tempC) {
+    var COLD = 20, HOT = 1000;
+    var t = Math.max(0, Math.min(1, (tempC - COLD) / (HOT - COLD)));
+    var h = (210 + t * 176) % 360;   // 210 (blue) -> 386 wraps to 26 (orange)
+    var s = 29 + t * 70;             // 29% -> 99%
+    var l = 24 + t * 36;             // 24% -> 60%
+    return 'hsl(' + h.toFixed(0) + ' ' + s.toFixed(0) + '% ' + l.toFixed(0) + '%)';
+}
+
+function applyHeaderTemp() {
+    var header = document.querySelector('.app-header');
+    if (!header) return;
+    var temp = parseFloat(header.getAttribute('data-temp'));
+    if (isNaN(temp)) return;
+    header.style.background = tempToColor(temp);
+}
+
 var toastHideTimer;
 
 function showToast(message, actionText, actionHandler, timeout) {
