@@ -93,16 +93,20 @@ a:hover { text-decoration: underline; }
 /* Firing list */
 .firing-list { list-style: none; margin: 0; padding: 0; }
 .firing-row {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 0.75rem 1rem;
   margin-bottom: 0.5rem;
 }
 .firing-row:hover { background: #fafafa; }
+.firing-row__link {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  color: var(--text);
+}
+.firing-row__link:hover { text-decoration: none; }
 .firing-row__flame { color: var(--accent); flex-shrink: 0; }
 .firing-row__body { display: flex; flex-direction: column; }
 .firing-row__title { font-weight: 600; color: var(--text); }

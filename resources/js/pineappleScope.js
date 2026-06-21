@@ -1,7 +1,12 @@
+var toastHideTimer;
+
 function showToast(message, actionText, actionHandler, timeout) {
     var container = document.getElementById('toast-container');
     var msg = document.getElementById('toast-message');
     var action = document.getElementById('toast-action');
+
+    // Cancel any pending hide so a previous toast's timer can't dismiss this one.
+    clearTimeout(toastHideTimer);
 
     msg.textContent = message;
 
@@ -20,7 +25,7 @@ function showToast(message, actionText, actionHandler, timeout) {
     container.classList.add('toast--show');
 
     if (timeout) {
-        setTimeout(function () { container.classList.remove('toast--show'); }, timeout);
+        toastHideTimer = setTimeout(function () { container.classList.remove('toast--show'); }, timeout);
     }
 }
 
