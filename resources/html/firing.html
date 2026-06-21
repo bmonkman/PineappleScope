@@ -90,6 +90,8 @@
                 fill: false, label: 'Inner Temperature',
                 data: rs.map(function (r) { return r.inner; }),
                 borderColor: '#fe8b36', backgroundColor: '#fe8b36',
+                // Tint each segment by its temperature, matching the header bar gradient.
+                segment: { borderColor: function (ctx) { return tempToColor(ctx.p1.parsed.y); } },
                 lineTension: 0.1, yAxisID: 'inner'
             }];
             if (withOuter) {
