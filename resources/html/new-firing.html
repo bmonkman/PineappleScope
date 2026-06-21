@@ -1,40 +1,28 @@
 {{ define "content" }}
-    <div class="mdl-card mdl-shadow--2dp">
-        <div class="mdl-card__actions mdl-card--border">
-            <form action="/firing/{{ .firing.ID }}" method="POST" name="editform">
-                <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label">
-                    <input class="mdl-textfield__input" type="text" id="name" name="name" value="{{ .firing.Name }}">
-                    <label class="mdl-textfield__label" for="name">Name...</label>
-                </div>
-                <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label">
-                    <input class="mdl-textfield__input" type="text" id="notes" name="notes" value="{{ .firing.Notes }}">
-                    <label class="mdl-textfield__label" for="description">Notes...</label>
-                </div>
-                <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label">
-                    <input class="mdl-textfield__input" type="text" id="coneNumber" name="coneNumber" value="{{ .firing.ConeNumber }}">
-                    <label class="mdl-textfield__label" for="description">Cone...</label>
-                </div>
-                <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label">
-                        <input class="mdl-textfield__input" type="text" id="coneNumber" name="coneNumber" value="{{ .firing.ConeNumber }}">
-                        <label class="mdl-textfield__label" for="description">Cone...</label>
-                </div>
-                <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label">
-                    <input class="mdl-textfield__input" type="text" id="lowNotificationTemp" name="lowNotificationTemp" value="{{ .firing.LowNotificationTemp }}">
-                    <label class="mdl-textfield__label" for="description">Low notification temp</label>
-                </div>
-                <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label">
-                    <input class="mdl-textfield__input" type="text" id="highNotificationTemp" name="highNotificationTemp" value="{{ .firing.HighNotificationTemp }}">
-                    <label class="mdl-textfield__label" for="description">High notification temp</label>
-                </div>
-            </form>
-            <a class="mdl-button mdl-button--colored mdl-button--raised mdl-js-button mdl-js-ripple-effect " onclick="editform.submit();">
-                Save
-            </a>
-
-            <a href="#" onclick="deleteFiring({{ .firing.ID }})" style="margin-left:100px;" class="mdl-button mdl-js-button mdl-js-ripple-effect mdl-button--accent">
-                Delete
-            </a>
-
-        </div>
+    <div class="card">
+        <form action="/firing/{{ .firing.ID }}" method="POST" name="editform">
+            <div class="form-field">
+                <label for="name">Name</label>
+                <input type="text" id="name" name="name" value="{{ .firing.Name }}">
+            </div>
+            <div class="form-field">
+                <label for="notes">Notes</label>
+                <input type="text" id="notes" name="notes" value="{{ .firing.Notes }}">
+            </div>
+            <div class="form-field">
+                <label for="coneNumber">Cone</label>
+                <input type="text" id="coneNumber" name="coneNumber" value="{{ .firing.ConeNumber }}">
+            </div>
+            <div class="form-field">
+                <label for="lowNotificationTemp">Low notification temp</label>
+                <input type="text" id="lowNotificationTemp" name="lowNotificationTemp" value="{{ .firing.LowNotificationTemp }}">
+            </div>
+            <div class="form-field">
+                <label for="highNotificationTemp">High notification temp</label>
+                <input type="text" id="highNotificationTemp" name="highNotificationTemp" value="{{ .firing.HighNotificationTemp }}">
+            </div>
+        </form>
+        <button class="btn btn--accent" onclick="editform.submit();">Save</button>
+        <button class="btn btn--danger" onclick="deleteFiring({{ .firing.ID }})">Delete</button>
     </div>
-{{ end}}
+{{ end }}

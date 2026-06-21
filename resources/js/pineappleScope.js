@@ -1,31 +1,45 @@
-function deleteFiring(id) {
-    var snackbarContainer = document.querySelector('#toast-container');
+function showToast(message, actionText, actionHandler, timeout) {
+    var container = document.getElementById('toast-container');
+    var msg = document.getElementById('toast-message');
+    var action = document.getElementById('toast-action');
 
-    var handler = function(e) {
-        snackbarContainer.MaterialSnackbar.cleanup_()
-        var xhttp = new XMLHttpRequest();
-        xhttp.onreadystatechange = function() {
-        if (this.readyState == 4 && this.status == 200) {
-            var data = {message: 'Deleted firing.'};
-            snackbarContainer.MaterialSnackbar.showSnackbar(data);
-            setTimeout(function() {document.location = "/";} , 2000)
+    msg.textContent = message;
 
-        } else if (this.readyState == 4) {
-            var data = {message: 'Error while trying to delete..'};
-            snackbarContainer.MaterialSnackbar.showSnackbar(data);
-        }
+    if (actionText) {
+        action.textContent = actionText;
+        action.style.display = '';
+        action.onclick = function () {
+            container.classList.remove('toast--show');
+            actionHandler();
         };
-        xhttp.open("DELETE", "/firing/"+id, true);
+    } else {
+        action.style.display = 'none';
+        action.onclick = null;
+    }
+
+    container.classList.add('toast--show');
+
+    if (timeout) {
+        setTimeout(function () { container.classList.remove('toast--show'); }, timeout);
+    }
+}
+
+function deleteFiring(id) {
+    var doDelete = function () {
+        var xhttp = new XMLHttpRequest();
+        xhttp.onreadystatechange = function () {
+            if (this.readyState == 4 && this.status == 200) {
+                showToast('Deleted firing.', null, null, 2000);
+                setTimeout(function () { document.location = "/"; }, 1500);
+            } else if (this.readyState == 4) {
+                showToast('Error while trying to delete..', null, null, 4000);
+            }
+        };
+        xhttp.open("DELETE", "/firing/" + id, true);
         xhttp.send();
     };
 
-    var data = {
-        message: 'Are you sure?',
-        actionHandler: handler,
-        timeout: 5000,
-        actionText: 'Yes'
-    };
-    snackbarContainer.MaterialSnackbar.showSnackbar(data);
+    showToast('Are you sure?', 'Yes', doDelete, 5000);
 }
 
 
