@@ -92,6 +92,10 @@
                 borderColor: '#fe8b36', backgroundColor: '#fe8b36',
                 // Tint each segment by its temperature, matching the header bar gradient.
                 segment: { borderColor: function (ctx) { return tempToColor(ctx.p1.parsed.y); } },
+                // Hide the dense point markers (they overpower the gradient line when zoomed out);
+                // show one on hover, tinted to match.
+                pointRadius: 0, pointHoverRadius: 4,
+                pointHoverBackgroundColor: function (ctx) { return tempToColor(ctx.parsed.y); },
                 lineTension: 0.1, yAxisID: 'inner'
             }];
             if (withOuter) {
@@ -99,6 +103,7 @@
                     fill: false, label: 'Outer Temperature',
                     data: rs.map(function (r) { return r.outer; }),
                     borderColor: '#4caf50', backgroundColor: '#4caf50',
+                    pointRadius: 0, pointHoverRadius: 4,
                     lineTension: 0.1, yAxisID: 'outer'
                 });
             }

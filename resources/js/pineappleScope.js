@@ -90,10 +90,9 @@ function renderChart(data){
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            tooltips: {
-                mode: 'nearest',
-                intersect: false
-            },
+            // Hover anywhere along the x-axis shows the reading(s) at that time,
+            // so tooltips work even though point markers are hidden.
+            interaction: { mode: 'index', intersect: false },
             scales: {
                 x: {
                     type: "time",
