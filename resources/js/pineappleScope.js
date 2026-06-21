@@ -9,12 +9,25 @@ function tempToColor(tempC) {
     return 'hsl(' + h.toFixed(0) + ' ' + s.toFixed(0) + '% ' + l.toFixed(0) + '%)';
 }
 
+function setHeaderColor(tempC) {
+    var header = document.querySelector('.app-header');
+    if (header) header.style.background = tempToColor(tempC);
+}
+
+// Initial tint from the server-rendered temp on the header (no flash).
 function applyHeaderTemp() {
     var header = document.querySelector('.app-header');
     if (!header) return;
     var temp = parseFloat(header.getAttribute('data-temp'));
     if (isNaN(temp)) return;
-    header.style.background = tempToColor(temp);
+    setHeaderColor(temp);
+}
+
+// Live update during an active firing: retint and refresh the badge number.
+function setHeaderTemp(tempC) {
+    setHeaderColor(tempC);
+    var badge = document.querySelector('.temp-badge');
+    if (badge) badge.textContent = Math.round(tempC) + '˚C';
 }
 
 var toastHideTimer;

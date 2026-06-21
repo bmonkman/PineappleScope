@@ -14,6 +14,14 @@
                 <span class="info-row__value">{{ .peakTemperature }}˚C</span>
             </div>
             <div class="info-row">
+                <span class="info-row__label">Rate of rise</span>
+                <span class="info-row__value" id="rate-value">—</span>
+            </div>
+            <div class="info-row" id="eta-row" style="display: none;">
+                <span class="info-row__label">Est. time to cone</span>
+                <span class="info-row__value" id="eta-value">—</span>
+            </div>
+            <div class="info-row">
                 <span class="info-row__label">Cone</span>
                 <span class="info-row__value">{{ .firing.ConeNumber }}</span>
             </div>
@@ -54,51 +62,136 @@
 
     <script>
         var myChart;
-        var innerOnlyData = {
-                labels: [ {{ range .temperatureReadings }}moment("{{ .CreatedDate.Format "2006-01-02 15:04:05" }}"),{{ end }} ],
-                datasets: [{
-                    fill: false,
-                    label: 'Temperature',
-                    data: [{{ range .temperatureReadings }}{{ .Inner }},{{ end }}],
-                    borderColor: '#fe8b36',
-                    backgroundColor: '#fe8b36',
-                    lineTension: 0.1,
-                    yAxisID: 'inner'
-                }]
-            };
+        var firingId = {{ .firing.ID }};
+        var coneNumber = "{{ .firing.ConeNumber }}";
+        var showOuter = false;
+        var readings = [
+            {{ range .temperatureReadings }}{ t: "{{ .CreatedDate.Format "2006-01-02 15:04:05" }}", inner: {{ .Inner }}, outer: {{ .Outer }} },{{ end }}
+        ];
 
-            var allData = {
-                labels: [ {{ range .temperatureReadings }}moment("{{ .CreatedDate.Format "2006-01-02 15:04:05" }}"),{{ end }} ],
-                datasets: [{
-                    fill: false,
-                    label: 'Inner Temperature',
-                    data: [{{ range .temperatureReadings }}{{ .Inner }},{{ end }}],
-                    borderColor: '#fe8b36',
-                    backgroundColor: '#fe8b36',
-                    lineTension: 0.1,
-                    yAxisID: 'inner'
-                },
-                {
-                    fill: false,
-                    label: 'Outer Temperature',
-                    data: [{{ range .temperatureReadings }}{{ .Outer }},{{ end }}],
-                    borderColor: '#4caf50',
-                    backgroundColor: '#4caf50',
-                    lineTension: 0.1,
-                    yAxisID: 'outer'
-                }]
-            };
+        // Orton cone end temperatures (°C) at a medium 108°F/hr heating rate.
+        var CONE_TEMPS = {
+            "022":586,"021":600,"020":626,"019":656,"018":686,"017":705,"016":742,
+            "015":750,"014":757,"013":807,"012":843,"011":857,"010":891,
+            "09":907,"08":922,"07":962,"06":998,"05":1031,"04":1063,"03":1086,
+            "02":1102,"01":1119,"1":1137,"2":1142,"3":1152,"4":1162,"5":1186,
+            "6":1222,"7":1239,"8":1249,"9":1260,"10":1285,"11":1294,"12":1306,
+            "13":1321,"14":1388
+        };
+
+        function coneToTemp(cone) {
+            if (!cone) return null;
+            var key = String(cone).trim().replace(/^[∆Δ]?\s*(cone\s*)?/i, '');
+            return CONE_TEMPS.hasOwnProperty(key) ? CONE_TEMPS[key] : null;
+        }
+
+        function buildChartData(rs, withOuter) {
+            var datasets = [{
+                fill: false, label: 'Inner Temperature',
+                data: rs.map(function (r) { return r.inner; }),
+                borderColor: '#fe8b36', backgroundColor: '#fe8b36',
+                lineTension: 0.1, yAxisID: 'inner'
+            }];
+            if (withOuter) {
+                datasets.push({
+                    fill: false, label: 'Outer Temperature',
+                    data: rs.map(function (r) { return r.outer; }),
+                    borderColor: '#4caf50', backgroundColor: '#4caf50',
+                    lineTension: 0.1, yAxisID: 'outer'
+                });
+            }
+            var target = coneToTemp(coneNumber);
+            if (target !== null && rs.length > 0) {
+                datasets.push({
+                    fill: false, label: 'Cone ' + coneNumber.trim() + ' target (' + target + '°C)',
+                    data: rs.map(function () { return target; }),
+                    borderColor: '#9aa0a6', borderDash: [6, 4],
+                    pointRadius: 0, lineTension: 0, yAxisID: 'inner'
+                });
+            }
+            return { labels: rs.map(function (r) { return moment(r.t); }), datasets: datasets };
+        }
+
+        // Rate of rise (°C/hr) over the trailing 10-minute window.
+        function computeRate(rs) {
+            if (rs.length < 2) return null;
+            var last = rs[rs.length - 1];
+            var lastMs = moment(last.t).valueOf();
+            var windowStartMs = lastMs - 10 * 60 * 1000;
+            var ref = rs[rs.length - 2];
+            for (var i = rs.length - 2; i >= 0; i--) {
+                if (moment(rs[i].t).valueOf() >= windowStartMs) { ref = rs[i]; }
+                else break;
+            }
+            var dtHours = (lastMs - moment(ref.t).valueOf()) / 3600000;
+            if (dtHours <= 0) return null;
+            return (last.inner - ref.inner) / dtHours;
+        }
+
+        function formatDuration(hours) {
+            var totalMin = Math.round(hours * 60);
+            var h = Math.floor(totalMin / 60);
+            var m = totalMin % 60;
+            return h > 0 ? h + 'h ' + m + 'm' : m + 'm';
+        }
+
+        function updateStats() {
+            var rate = computeRate(readings);
+            var rateEl = document.getElementById('rate-value');
+            if (rate === null) {
+                rateEl.textContent = '—';
+            } else {
+                rateEl.textContent = (rate >= 0 ? '+' : '−') + Math.abs(rate).toFixed(0) + ' °C/hr';
+            }
+
+            var target = coneToTemp(coneNumber);
+            var current = readings.length ? readings[readings.length - 1].inner : null;
+            var etaRow = document.getElementById('eta-row');
+            if (target !== null && current !== null && rate !== null && rate > 0 && current < target) {
+                document.getElementById('eta-value').textContent =
+                    '~' + formatDuration((target - current) / rate) + ' to cone ' + coneNumber.trim();
+                etaRow.style.display = '';
+            } else {
+                etaRow.style.display = 'none';
+            }
+        }
 
         function addOuterData() {
-            if (myChart.options.scales.outer.display == false) {
-                myChart.data = allData
-            } else {
-                myChart.data = innerOnlyData
-            }
-            myChart.options.scales.outer.display = !myChart.options.scales.outer.display;
+            showOuter = !showOuter;
+            myChart.options.scales.outer.display = showOuter;
+            myChart.data = buildChartData(readings, showOuter);
             myChart.update();
         }
 
-        window.onload = renderChart(innerOnlyData);
+        function refresh() {
+            var xhttp = new XMLHttpRequest();
+            xhttp.onreadystatechange = function () {
+                if (this.readyState === 4 && this.status === 200) {
+                    var data = JSON.parse(this.responseText);
+                    readings = data.map(function (r) {
+                        return { t: moment(r.CreatedDate).format('YYYY-MM-DD HH:mm:ss'), inner: r.Inner, outer: r.Outer };
+                    });
+                    myChart.data = buildChartData(readings, showOuter);
+                    myChart.update();
+                    updateStats();
+                    if (readings.length) { setHeaderTemp(readings[readings.length - 1].inner); }
+                }
+            };
+            xhttp.open('GET', '/firing/' + firingId + '/readings', true);
+            xhttp.send();
+        }
+
+        // A firing is "active" (worth live-polling) if its newest reading is recent.
+        function isFiringActive() {
+            if (!readings.length) return false;
+            var lastMs = moment(readings[readings.length - 1].t).valueOf();
+            return (Date.now() - lastMs) < 15 * 60 * 1000;
+        }
+
+        window.onload = function () {
+            renderChart(buildChartData(readings, showOuter));
+            updateStats();
+            if (isFiringActive()) { setInterval(refresh, 30000); }
+        };
     </script>
 {{ end }}

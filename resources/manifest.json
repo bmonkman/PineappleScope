@@ -1,0 +1,17 @@
+{
+    "name": "PineappleScope",
+    "short_name": "PineappleScope",
+    "description": "Kiln firing monitor",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#f5f5f4",
+    "theme_color": "#fe8b36",
+    "icons": [
+        {
+            "src": "/images/android-desktop.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any"
+        }
+    ]
+}
