@@ -1,18 +1,34 @@
-#FROM scratch
-# FROM gliderlabs/alpine:3.6
-FROM debian
+# Build stage: compile the CGO sqlite binary natively for linux.
+# (Building inside Docker on a Linux runner avoids the cross-compilation pain
+# that previously required xgo.)
+FROM golang:1.21-bookworm AS builder
 
-ADD PineappleScope-linux-amd64 /app
-ADD resources/ /resources/
+WORKDIR /src
+
+# Cache module downloads across builds.
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY . .
+RUN CGO_ENABLED=1 GOOS=linux go build -o /out/pineapplescope ./cmd/pineapplescope
+
+# Runtime stage: slim image with just the binary, templates/assets, and certs.
+FROM debian:bookworm-slim
 
 ENV TZ=America/Vancouver
-RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
-RUN apt-get update && apt-get install -y ca-certificates && apt-get clean
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ca-certificates tzdata \
+    && ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+COPY --from=builder /out/pineapplescope /app/pineapplescope
+COPY resources/ /app/resources/
 
 EXPOSE 1111
 
-ENV DBFILE /var/db/pineapplescope.db
+# DB lives on a volume so it survives container recreation/updates.
+ENV DBFILE=/var/db/pineapplescope.db
 VOLUME /var/db/
 
-#CMD ["sleep","1000"]
-ENTRYPOINT ["/app"]
+ENTRYPOINT ["/app/pineapplescope"]

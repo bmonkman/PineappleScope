@@ -1,0 +1,8 @@
+.git
+.github
+docs
+*.db
+*.md
+arduino
+piscope
+PineappleScope-linux-amd64
