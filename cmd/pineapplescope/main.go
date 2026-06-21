@@ -6,8 +6,8 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/bmonkman/PineappleScope/handlers"
-	"github.com/bmonkman/PineappleScope/models"
+	"github.com/bmonkman/pineapplescope/internal/handlers"
+	"github.com/bmonkman/pineapplescope/internal/models"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
 
@@ -94,6 +94,7 @@ func main() {
 	r.Static("/css", "./resources/css/")
 	r.Static("/images", "./resources/images/")
 	r.StaticFile("/favicon.ico", "./resources/favicon.ico")
+	r.StaticFile("/manifest.json", "./resources/manifest.json")
 
 	// Index
 	r.GET("/", func(c *gin.Context) {

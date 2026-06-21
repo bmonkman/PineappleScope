@@ -3,7 +3,6 @@ module github.com/bmonkman/pineapplescope
 go 1.21
 
 require (
-	github.com/bmonkman/PineappleScope v0.0.0-20181222031842-1f6524d9397f
 	github.com/gin-contrib/multitemplate v0.0.0-20230212012517-45920c92c271
 	github.com/gin-gonic/gin v1.9.1
 	github.com/jinzhu/gorm v1.9.16

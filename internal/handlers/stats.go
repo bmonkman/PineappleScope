@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/bmonkman/PineappleScope/models"
+	"github.com/bmonkman/pineapplescope/internal/models"
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
 )
