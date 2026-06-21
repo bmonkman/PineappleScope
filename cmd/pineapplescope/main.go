@@ -18,7 +18,9 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-const version = "0.1.0"
+// version is overridden at build time via -ldflags "-X main.version=<sha>" so
+// asset URLs (?v=...) bust browser caches on every published build.
+var version = "dev"
 
 // AddDbHandle middleware will add the db connection to the context
 func AddDbHandle(db *gorm.DB) gin.HandlerFunc {

@@ -27,6 +27,8 @@ jobs:
           context: .
           push: true
           platforms: linux/amd64
+          build-args: |
+            VERSION=${{ github.sha }}
           tags: |
             bmonkman/pineapplescope:latest
             bmonkman/pineapplescope:${{ github.sha }}
