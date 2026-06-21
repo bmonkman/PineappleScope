@@ -1,69 +1,60 @@
-
 {{ define "content" }}
-    <div class="mdl-list" style="width:400px;">
-        <div style="display: inline-block; width:360px;">
-            <div class="mdl-list__item">
-                <span class="mdl-list__item-primary-content">Start/End Date:</span>
-                <span class="mdl-list__item-secondary-content">{{ .firing.StartDate.Format "Mon, Jan _2 3:04PM" }}<br/>{{ .firing.EndDate.Format "Mon, Jan _2 3:04PM" }}</span>
+    <div class="firing-detail">
+        <div class="info-panel card">
+            <div class="info-row">
+                <span class="info-row__label">Start / End</span>
+                <span class="info-row__value">{{ .firing.StartDate.Format "Mon, Jan _2 3:04PM" }}<br/>{{ .firing.EndDate.Format "Mon, Jan _2 3:04PM" }}</span>
             </div>
-            <div class="mdl-list__item">
-                <span class="mdl-list__item-primary-content">Starting ambient temp:</span>
-                <span class="mdl-list__item-secondary-content">{{ .firing.StartDateAmbientTemp }}˚C</span>
+            <div class="info-row">
+                <span class="info-row__label">Starting ambient temp</span>
+                <span class="info-row__value">{{ .firing.StartDateAmbientTemp }}˚C</span>
             </div>
-            <div class="mdl-list__item">
-                <span class="mdl-list__item-primary-content">Peak temp:</span>
-                <span class="mdl-list__item-secondary-content">{{ .peakTemperature }}˚C</span>
+            <div class="info-row">
+                <span class="info-row__label">Peak temp</span>
+                <span class="info-row__value">{{ .peakTemperature }}˚C</span>
             </div>
-            <div class="mdl-list__item">
-                <span class="mdl-list__item-primary-content">Cone:</span>
-                <span class="mdl-list__item-secondary-content">{{ .firing.ConeNumber }}</span>
+            <div class="info-row">
+                <span class="info-row__label">Cone</span>
+                <span class="info-row__value">{{ .firing.ConeNumber }}</span>
             </div>
-            <div class="mdl-list__item">
-                <span class="mdl-list__item-primary-content">Notes:</span>
-                <span class="mdl-list__item-secondary-content">{{ .firing.Notes }}</span>
+            <div class="info-row">
+                <span class="info-row__label">Notes</span>
+                <span class="info-row__value">{{ .firing.Notes }}</span>
             </div>
-
-        </div>
-        <div style="display: inline-block; vertical-align: top;">
-            <button id="notificationSettings" class="mdl-button mdl-js-button mdl-button--icon">
-                <i class="material-icons">notifications</i>
-            </button>
-            <ul class="mdl-menu mdl-js-menu mdl-js-ripple-effect mdl-menu--bottom-right" for="notificationSettings">
+            {{ if or (gt .firing.LowNotificationTemp 0.0) (gt .firing.HighNotificationTemp 0.0) }}
+            <details class="notify">
+                <summary>Notification settings</summary>
                 <a href="/firing/{{ .firing.ID }}/edit">
-                    {{ if gt .firing.LowNotificationTemp 0.0 }}<li class="mdl-menu__item">Low notification temp: {{ .firing.LowNotificationTemp }}{{ if .firing.LowNotificationSent }} <b>(sent)</b>{{ end }}</li>{{ end }}
-                    {{ if gt .firing.HighNotificationTemp 0.0 }}<li class="mdl-menu__item">High notification temp: {{ .firing.HighNotificationTemp }}{{ if .firing.HighNotificationSent }} <b>(sent)</b>{{ end }}</li>{{ end }}
+                    {{ if gt .firing.LowNotificationTemp 0.0 }}<div class="info-row"><span class="info-row__label">Low temp</span><span class="info-row__value">{{ .firing.LowNotificationTemp }}{{ if .firing.LowNotificationSent }} (sent){{ end }}</span></div>{{ end }}
+                    {{ if gt .firing.HighNotificationTemp 0.0 }}<div class="info-row"><span class="info-row__label">High temp</span><span class="info-row__value">{{ .firing.HighNotificationTemp }}{{ if .firing.HighNotificationSent }} (sent){{ end }}</span></div>{{ end }}
                 </a>
-            </ul>
+            </details>
+            {{ end }}
+        </div>
+
+        <div class="chart-card card">
+            <div class="chart-wrap">
+                <canvas id="myChart"></canvas>
+            </div>
         </div>
     </div>
 
-
-
-
-    <div class="mdl-grid">
-
-        <div class="mdl-shadow--2dp mdl-color--white mdl-cell mdl-cell--8-col">
-            <canvas id="myChart" width="400" height="400"></canvas>
-        </div>
+    <div>
+        <button class="btn" onclick="document.getElementById('raw-data').style.display='';">Raw Data</button>
+        <button class="btn" onclick="addOuterData();">Ambient Temp</button>
+        <a class="btn btn--accent" href="/firing/{{ .firing.ID }}/edit">Edit</a>
+        <button class="btn btn--danger" onclick="deleteFiring({{ .firing.ID }})">Delete</button>
     </div>
-    <div class="mdl-button mdl-button--colored mdl-button--raised mdl-js-button mdl-js-ripple-effect" style="margin:5px;" onclick="document.getElementById('raw-data').style='display:;';">Raw Data</div>
-    <div class="mdl-button mdl-button--colored mdl-button--raised mdl-js-button mdl-js-ripple-effect" style="margin:5px;" onclick="addOuterData();">Ambient Temp</div>
-    <a href="/firing/{{ .firing.ID }}/edit" id="add-firing">
-        <button class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-button--accent">
-            Edit
-        </button>
-    </a>
-    <table id="raw-data" style="display: none;">
+
+    <table id="raw-data" class="data-table" style="display: none;">
     {{ range .temperatureReadings }}
         <tr><td>{{ . }}</td></tr>
     {{ end }}
     </table>
 
-
     <script>
         var myChart;
         var innerOnlyData = {
-                // Labels should be Date objects
                 labels: [ {{ range .temperatureReadings }}moment("{{ .CreatedDate.Format "2006-01-02 15:04:05" }}"),{{ end }} ],
                 datasets: [{
                     fill: false,
@@ -77,7 +68,6 @@
             };
 
             var allData = {
-                // Labels should be Date objects
                 labels: [ {{ range .temperatureReadings }}moment("{{ .CreatedDate.Format "2006-01-02 15:04:05" }}"),{{ end }} ],
                 datasets: [{
                     fill: false,
@@ -105,9 +95,7 @@
             } else {
                 myChart.data = innerOnlyData
             }
-
-            myChart.options.scales.outer.display=!myChart.options.scales.outer.display;
-
+            myChart.options.scales.outer.display = !myChart.options.scales.outer.display;
             myChart.update();
         }
 
